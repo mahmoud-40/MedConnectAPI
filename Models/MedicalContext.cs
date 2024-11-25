@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Medical.Models;
@@ -31,13 +32,17 @@ public class MedicalContext : IdentityDbContext
             .HasOne(a => a.Provider)
             .WithMany(p => p.Appointments)
             .HasForeignKey(a => a.ProviderId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading delete
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Appointment>()
             .HasOne(a => a.Record)
             .WithMany(p => p.Appointments)
             .HasForeignKey(a => a.RecordId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent cascading delete
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<IdentityRole>().HasData(new IdentityRole() { Name = "Patient", NormalizedName = "PATIENT" });
+        modelBuilder.Entity<IdentityRole>().HasData(new IdentityRole() { Name = "Provider", NormalizedName = "PROVIDER" });
+        modelBuilder.Entity<IdentityRole>().HasData(new IdentityRole() { Name = "Admin", NormalizedName = "ADMIN" });
     }
 
 }
