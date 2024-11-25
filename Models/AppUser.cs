@@ -4,5 +4,5 @@ namespace Medical.Models;
 
 public class AppUser : IdentityUser
 {
-    // common between patient & provider
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
