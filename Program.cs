@@ -1,18 +1,22 @@
 using Medical.Models;
+using Medical.Utils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 
 
 
 builder.Services.AddControllers();
 builder.Services.AddDbContext<MedicalContext>(op => op.UseLazyLoadingProxies().UseSqlServer(builder.Configuration.GetConnectionString("SQL-Server")));
 builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<MedicalContext>();
+builder.Services.AddSingleton<IConverter, Converter>();
+builder.Services.AddSingleton<IValidator, Validator>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+WebApplication? app = builder.Build();
 
 
 if (app.Environment.IsDevelopment())
