@@ -19,10 +19,11 @@ public class UserController : ControllerBase
         this.converter = converter;
     }
 
-    [HttpDelete]
-    public IActionResult DeleteProfile(int id)
+    [HttpDelete("{id}")]
+    public IActionResult DeleteProfile(string id)
     {
-        AppUser? user = userManager.FindByIdAsync(id.ToString()).Result;
+        //TODO: If user delete himself close the session
+        AppUser? user = userManager.FindByIdAsync(id).Result;
         if (user == null)
             return NotFound();
 

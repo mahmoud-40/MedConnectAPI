@@ -40,7 +40,7 @@ public class Converter : IConverter
 
     public TimeSpan CalcDuration(DateTime Start, DateTime? End = null)
     {
-        DateTime effectiveEnd = End ?? DateTime.Today;
+        DateTime effectiveEnd = End ?? DateTime.UtcNow;
 
         if (Start > effectiveEnd)
             throw new ArgumentException("Start date can't be earlier than End date");
@@ -50,7 +50,7 @@ public class Converter : IConverter
 
     public TimeSpan CalcDuration(DateOnly Start, DateOnly? End = null)
     {
-        DateTime effectiveEnd = End?.ToDateTime(TimeOnly.MinValue) ?? DateTime.Today;
+        DateTime effectiveEnd = End?.ToDateTime(TimeOnly.MinValue) ?? DateTime.UtcNow;
 
         DateTime effectiveStart = Start.ToDateTime(TimeOnly.MinValue);
 

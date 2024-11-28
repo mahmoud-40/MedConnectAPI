@@ -4,7 +4,7 @@ namespace Medical.Models;
 
 public class Record : BaseEntity
 {
-    public DateTime UpdatedAt { get; set; } = DateTime.Now;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("Patient")]
     public required string PatientId { get; set; }

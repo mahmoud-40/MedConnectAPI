@@ -24,12 +24,10 @@ public class PatientsController : ControllerBase
 
     [HttpGet]
     public IActionResult GetAll()
-    {
+    {   
         List<Patient> patients = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().ToList();
-        List<ViewPatientDTO> patientsDTO = new List<ViewPatientDTO>();
 
-        foreach (Patient patient in patients)
-            patientsDTO.Add(converter.ToPatientDTO(patient));
+        List<ViewPatientDTO> patientsDTO = patients.Select(patient => converter.ToPatientDTO(patient)).ToList();
 
         return Ok(patientsDTO);
     }
@@ -46,7 +44,7 @@ public class PatientsController : ControllerBase
         return Ok(patientDTO);
     }
 
-    [HttpPut("{profile}")]
+    [HttpPut("profile")]
     public IActionResult EditProfile(UpdatePatientDTO patientDTO)
     {
         if (patientDTO == null)
