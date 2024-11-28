@@ -4,6 +4,7 @@ using Medical.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Medical.Migrations
 {
     [DbContext(typeof(MedicalContext))]
-    partial class MedicalContextModelSnapshot : ModelSnapshot
+    [Migration("20241128104811_SeedAdmins")]
+    partial class SeedAdmins
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,7 +70,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("RecordId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("Medical.Models.Doctor", b =>
@@ -104,7 +107,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("ProviderId");
 
-                    b.ToTable("Doctors", (string)null);
+                    b.ToTable("Doctors");
                 });
 
             modelBuilder.Entity("Medical.Models.Notification", b =>
@@ -131,7 +134,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("AppointmentId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Medical.Models.Record", b =>
@@ -159,7 +162,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Records", (string)null);
+                    b.ToTable("Records");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -191,21 +194,21 @@ namespace Medical.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "eff5d99a-2a59-4c4f-b2a1-f6160681c21e",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
+                            Id = "5f8226d9-8846-41ac-9f09-ea7a352d9950",
+                            Name = "Patient",
+                            NormalizedName = "PATIENT"
                         },
                         new
                         {
-                            Id = "032dee93-a51d-4cef-b557-8f90c84cff01",
+                            Id = "dee8cf8d-b4f2-4530-8088-c527698322ac",
                             Name = "Provider",
                             NormalizedName = "PROVIDER"
                         },
                         new
                         {
-                            Id = "952ff8eb-6fa8-4835-82fa-89125625741b",
-                            Name = "Patient",
-                            NormalizedName = "PATIENT"
+                            Id = "0ffa8ef1-d979-4274-8269-4417dc463b74",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
                         });
                 });
 
@@ -368,18 +371,6 @@ namespace Medical.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = "5b771323-eaa8-477d-848b-117ff0f19855",
-                            RoleId = "eff5d99a-2a59-4c4f-b2a1-f6160681c21e"
-                        },
-                        new
-                        {
-                            UserId = "b610bebc-c3e1-4a92-bfb0-30b32c4fb523",
-                            RoleId = "eff5d99a-2a59-4c4f-b2a1-f6160681c21e"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -425,38 +416,38 @@ namespace Medical.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "5b771323-eaa8-477d-848b-117ff0f19855",
+                            Id = "81f9940f-b9ea-42ce-9954-bfa74b1840e9",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "40283979-2c41-4a55-b204-f500acedce4c",
+                            ConcurrencyStamp = "fc919954-826a-4c12-982f-0d81366b41a6",
                             Email = "admin@joo.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@JOO.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKDJ4MEpx4XluhAjVBFwbsmooO+G2VFKFzi7USOJBNd4SHhHiGGg4VNyQdopO2964g==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEG6710iKI38N1N1iyCjgMBQuM7wyo5QkWQ54TJj6yXwRcebs9PqKqU3pQMKelt4JaA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "f4815c39-a65c-47e0-a480-1ec94aceed87",
+                            SecurityStamp = "fddf7d89-d0b1-421c-aed3-a7e607925504",
                             TwoFactorEnabled = false,
                             UserName = "admin",
-                            CreatedAt = new DateTime(2024, 11, 28, 13, 15, 1, 941, DateTimeKind.Utc).AddTicks(7883),
+                            CreatedAt = new DateTime(2024, 11, 28, 10, 48, 10, 556, DateTimeKind.Utc).AddTicks(4129),
                             Name = "Admin"
                         },
                         new
                         {
-                            Id = "b610bebc-c3e1-4a92-bfb0-30b32c4fb523",
+                            Id = "79b170b6-7ab2-4e9d-ba31-42ff04a0f99a",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "b6e80357-99da-4617-96cc-796b48f99a46",
+                            ConcurrencyStamp = "8861865e-b715-4858-ae2e-1d94d39c6cf0",
                             Email = "yuossefbakier@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "YUOSSEFBAKIER@GMAIL.COM",
                             NormalizedUserName = "YOUSEF",
-                            PasswordHash = "AQAAAAIAAYagAAAAEHnBzJC1G+5i3XZ7S15Tbf5jKyc3jes4RrkDdgTRQ/FZUr3OgZmaK67Q+pedwx7dEg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEPkceoy1KRZKiqGAHSdvuAooKaOH2vuulp/ka1kzf521X217lNM/N9PUspQJIDw3WQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2759945b-2367-4363-a73c-c8b35428398a",
+                            SecurityStamp = "59f0bd1a-90dc-4fbb-9ddd-2c0f4c54f183",
                             TwoFactorEnabled = false,
                             UserName = "Yousef",
-                            CreatedAt = new DateTime(2024, 11, 28, 13, 15, 1, 986, DateTimeKind.Utc).AddTicks(9209),
+                            CreatedAt = new DateTime(2024, 11, 28, 10, 48, 10, 600, DateTimeKind.Utc).AddTicks(6242),
                             Name = "Yousef Ahmed"
                         });
                 });

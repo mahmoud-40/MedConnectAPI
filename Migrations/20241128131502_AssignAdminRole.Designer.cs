@@ -4,6 +4,7 @@ using Medical.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Medical.Migrations
 {
     [DbContext(typeof(MedicalContext))]
-    partial class MedicalContextModelSnapshot : ModelSnapshot
+    [Migration("20241128131502_AssignAdminRole")]
+    partial class AssignAdminRole
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,7 +70,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("RecordId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("Medical.Models.Doctor", b =>
@@ -104,7 +107,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("ProviderId");
 
-                    b.ToTable("Doctors", (string)null);
+                    b.ToTable("Doctors");
                 });
 
             modelBuilder.Entity("Medical.Models.Notification", b =>
@@ -131,7 +134,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("AppointmentId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Medical.Models.Record", b =>
@@ -159,7 +162,7 @@ namespace Medical.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Records", (string)null);
+                    b.ToTable("Records");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
