@@ -46,11 +46,15 @@ public class MedicalContext : IdentityDbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         #region Seed Roles
+        string adminRoleId = "0";
+        string providerRoleId = "1";
+        string patientRoleId = "2";
+
         List<IdentityRole> roles = new List<IdentityRole>()
         {
-            new IdentityRole() { Name = "Admin", NormalizedName = "ADMIN" },
-            new IdentityRole() { Name = "Provider", NormalizedName = "PROVIDER" },
-            new IdentityRole() { Name = "Patient", NormalizedName = "PATIENT" }
+            new IdentityRole() { Id = adminRoleId, Name = "Admin", NormalizedName = "ADMIN" },
+            new IdentityRole() { Id = providerRoleId, Name = "Provider", NormalizedName = "PROVIDER" },
+            new IdentityRole() { Id = patientRoleId, Name = "Patient", NormalizedName = "PATIENT" }
         };
 
         modelBuilder.Entity<IdentityRole>().HasData(roles);
@@ -78,7 +82,7 @@ public class MedicalContext : IdentityDbContext
             List<IdentityUserRole<string>> userRoles = admins.Select(admin => new IdentityUserRole<string>
             {
                 UserId = admin.Id,
-                RoleId = roles[0].Id
+                RoleId = adminRoleId
             }).ToList();
 
             modelBuilder.Entity<IdentityUserRole<string>>().HasData(userRoles);
