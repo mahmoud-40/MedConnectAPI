@@ -105,7 +105,7 @@ namespace Medical.Controllers
                         new { userId = user.Id, token = token }, Request.Scheme);
 
                     // Send email
-                    await emailService.SendEmailAsync("gemyelbatawy@gmail.com", "Confirm Your Email",
+                    await emailService.SendEmailAsync("ghealthcaresystem878@gmail.com", "Confirm Your Email",
                         $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
                     //Assigned To Role
@@ -221,7 +221,7 @@ namespace Medical.Controllers
 
                 var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
 
-                emailService.SendEmailAsync("gemyelbatawy@gmail.com", "ResetPassword", "Please reset your email."+passwordResetLink );
+                emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email."+passwordResetLink );
                 return Ok(new { Message = "If an account with that email exists, a password reset link has been sent." });
 
 
