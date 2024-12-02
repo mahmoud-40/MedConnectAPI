@@ -105,7 +105,7 @@ namespace Medical.Controllers
                         new { userId = user.Id, token = token }, Request.Scheme);
 
                     // Send email
-                    await emailService.SendEmailAsync("ghealthcaresystem878@gmail.com", "Confirm Your Email",
+                    await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
                         $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
                     //Assigned To Role
