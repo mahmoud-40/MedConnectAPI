@@ -1,6 +1,8 @@
-﻿using Medical.DTOs.Patients;
+﻿using AutoMapper;
+using Medical.DTOs.Patients;
 using Medical.Models;
 using Medical.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,14 +14,14 @@ namespace Medical.Controllers;
 public class PatientsController : ControllerBase
 {
     private readonly UserManager<AppUser> userManager;
-    private readonly IConverter converter;
     private readonly IValidator validator;
+    private readonly IMapper mapper;
 
-    public PatientsController(UserManager<AppUser> userManager, IConverter converter, IValidator validator)
+    public PatientsController(UserManager<AppUser> userManager, IValidator validator, IMapper mapper)
     {
         this.userManager = userManager;
-        this.converter = converter;
         this.validator = validator;
+        this.mapper = mapper;
     }
 
     [HttpGet]
@@ -27,8 +29,8 @@ public class PatientsController : ControllerBase
     {   
         List<Patient> patients = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().ToList();
 
-        List<ViewPatientDTO> patientsDTO = patients.Select(patient => converter.ToPatientDTO(patient)).ToList();
-
+        List<ViewPatientDTO> patientsDTO = mapper.Map<List<ViewPatientDTO>>(patients);
+        
         return Ok(patientsDTO);
     }
 
@@ -39,11 +41,12 @@ public class PatientsController : ControllerBase
         if (patient == null)
             return NotFound();
 
-        ViewPatientDTO patientDTO = converter.ToPatientDTO(patient);
+        ViewPatientDTO patientDTO = mapper.Map<ViewPatientDTO>(patient);
 
         return Ok(patientDTO);
     }
 
+    [Authorize (Roles = "Patient")]
     [HttpPut("profile")]
     public IActionResult EditProfile(UpdatePatientDTO patientDTO)
     {
@@ -51,22 +54,17 @@ public class PatientsController : ControllerBase
             return BadRequest();
         if (!ModelState.IsValid)
             return BadRequest();
+        if (User.Identity?.Name == null)
+            return Unauthorized();
 
-        #region GetUser
-        Patient? patient = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().Where(e => e.Id == patientDTO.Id).SingleOrDefault();
+        Patient? patient = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().SingleOrDefault(e => e.UserName == User.Identity.Name);
         if (patient == null)
             return NotFound();
-        #endregion
 
         if (!validator.IsBirthdayValid(patientDTO.BirthDay, out Exception ex))
             return BadRequest(ex.Message);
 
-        patient.Name = patientDTO.Name;
-        patient.Email = patientDTO.Email;
-        patient.BirthDay = patientDTO.BirthDay;
-        patient.Address = patientDTO.Address;
-        patient.Gender = patientDTO.Gender;
-        patient.PhoneNumber = patientDTO.PhoneNumber;
+        mapper.Map(patientDTO, patient);
 
         IdentityResult res = userManager.UpdateAsync(patient).Result;
         if (!res.Succeeded)
@@ -75,15 +73,19 @@ public class PatientsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet("{id}/medical-records")]
     public IActionResult GetMedicalRecordsGeneral(int id) { throw new NotImplementedException(); }
 
+    [Authorize(Roles = "Patient")]
     [HttpGet("medical-records")]
     public IActionResult GetMedicalRecords() { throw new NotImplementedException(); }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet("{id}/appointments")]
     public IActionResult GetAppointmentsGeneral(int id) { throw new NotImplementedException(); }
 
+    [Authorize(Roles = "Patient")]
     [HttpGet("appointments")]
     public IActionResult GetAppointments() { throw new NotImplementedException(); }
 }

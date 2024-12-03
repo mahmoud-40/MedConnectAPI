@@ -1,4 +1,5 @@
-﻿using Medical.Data.Interface;
+﻿using AutoMapper;
+using Medical.Data.Interface;
 using Medical.Data.Repository;
 using Medical.Data.UnitOfWorks;
 using Medical.DTOs.ProvidersDTOs;
@@ -13,15 +14,17 @@ namespace Medical.Controllers
     [ApiController]
     public class ProvidersController : ControllerBase
     {
-        UserManager<AppUser> _userManager;
-        private IUnitOfWork _unit;
-        public ProvidersController(UserManager<AppUser> userManager, IUnitOfWork unit)
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IUnitOfWork _unit;
+        private readonly IMapper mapper;
+
+        public ProvidersController(UserManager<AppUser> userManager, IUnitOfWork unit, IMapper mapper)
         {
             _userManager = userManager;
             _unit = unit;
+            this.mapper = mapper;
         }
 
-        // POST /providers/register
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterProviderDTO _registerProviderDto)
         {
@@ -79,46 +82,22 @@ namespace Medical.Controllers
             }
         }
 
-        // POST /providers/login
-        //[HttpPost("login")]
-        //public IActionResult Login()
-        //{
-        //    return Ok(new { message = "Login successful" });
-        //}
 
-        // GET /providers/{id}:
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProvider(string id)
         {
-            var _provider = (Provider)_userManager.FindByIdAsync(id).Result;
-
+            Provider? _provider = _userManager.GetUsersInRoleAsync("Provider").Result.OfType<Provider>().SingleOrDefault();
             if (_provider == null)
-            {
                 return NotFound(new { message = "Provider not found" });
-            }
 
-            DisplayProviderDTO _displayProviderDto = new DisplayProviderDTO
-            {
-                UserName = _provider.UserName,
-                Email = _provider.Email,
-                PhoneNumber = _provider.PhoneNumber,
-                bio = _provider.bio,
-                Shift = _provider.Shift,
-                Rate = _provider.Rate,
-            };
+            DisplayProviderDTO _displayProviderDto = mapper.Map<DisplayProviderDTO>(_provider);
 
             var doctors = await _unit.DoctorRepository.GetAll();
             foreach (var doctor in doctors)
             {
                 if (doctor.ProviderId == _provider.Id)
                 {
-                    AddDoctorToProviderDTO _addDoctorToProviderDto = new AddDoctorToProviderDTO
-                    {
-                        FullName = doctor.FullName,
-                        Title = doctor.Title,
-                        HireDate = doctor.HireDate,
-                        YearExperience = doctor.YearExperience
-                    };
+                    AddDoctorToProviderDTO _addDoctorToProviderDto = mapper.Map<AddDoctorToProviderDTO>(doctor);
 
                     _displayProviderDto.Doctors.Add(_addDoctorToProviderDto);
                 }

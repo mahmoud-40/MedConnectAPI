@@ -1,3 +1,4 @@
+using Medical.Configuration;
 using Medical.Data.Interface;
 using Medical.Data.Repository;
 using Medical.Data.UnitOfWorks;
@@ -22,6 +23,7 @@ builder.Services.AddSingleton<IValidator, Validator>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddAutoMapper(typeof(MapperConfig));
 
 #region Swagger
 builder.Services.AddEndpointsApiExplorer();

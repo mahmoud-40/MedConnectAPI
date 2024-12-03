@@ -21,7 +21,7 @@ public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEnt
         return await dbset.ToListAsync();
     }
 
-    public async Task<TEntity> GetById(int id)
+    public async Task<TEntity?> GetById(int id)
     {
         return await dbset.FindAsync(id);
 
@@ -29,20 +29,17 @@ public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEnt
     public async Task Add(TEntity entity)
     {
         await dbset.AddAsync(entity);
-
     }
 
-    public async Task Update(TEntity entity)
+    public void Update(TEntity entity)
     {
         dbset.Entry(entity).State = EntityState.Modified;
-
     }
 
 
-    public async Task Delete(TEntity entity)
+    public void Delete(TEntity entity)
     {
         dbset.Remove(entity);
-
     }
 
 }

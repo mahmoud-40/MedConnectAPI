@@ -1,6 +1,4 @@
-﻿namespace Medical.DTOs.ProvidersDTOs
+﻿namespace Medical.DTOs.ProvidersDTOs;
+public class AddAppointmentToProviderDTO
 {
-    public class AddAppointmentToProviderDTO
-    {
-    }
 }

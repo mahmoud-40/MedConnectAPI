@@ -53,17 +53,17 @@ namespace Medical.Data.Repository
 
             try
             {
-                var smtpSettings = _configuration.GetSection("SmtpSettings");
+                IConfigurationSection? smtpSettings = _configuration.GetSection("SmtpSettings");
 
-                var mailMessage = new MailMessage(smtpSettings["Username"], sender, subject, body)
+                MailMessage? mailMessage = new MailMessage(smtpSettings["Username"]!, sender, subject, body)
                 {
                     IsBodyHtml = true
                 };
 
                 SmtpClient smtp = new SmtpClient(smtpSettings["Server"])
                 {
-                    EnableSsl = bool.Parse(smtpSettings["EnableSsl"]),
-                    Port = int.Parse(smtpSettings["Port"]),
+                    EnableSsl = bool.Parse(smtpSettings["EnableSsl"]!),
+                    Port = int.Parse(smtpSettings["Port"]!),
                     Credentials = new NetworkCredential(smtpSettings["Username"], smtpSettings["Password"])
                 };
 

@@ -1,9 +1,7 @@
-﻿namespace Medical.Data.Interface
+﻿namespace Medical.Data.Interface;
+
+public interface IEmailService
 {
-    public interface IEmailService
-    {
 
-        public Task SendEmailAsync(string sender, string subject, string body);
-
-    }
+    public Task SendEmailAsync(string sender, string subject, string body);
 }

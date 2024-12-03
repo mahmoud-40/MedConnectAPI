@@ -5,12 +5,10 @@ namespace Medical.DTOs.Patients;
 
 public class UpdatePatientDTO
 {
-    public required string Id { get; set; } //TODO: remove and get user from current session
-    [StringLength(256)]
     public required string Name { get; set; }
 
-    [StringLength(256)]
-    [RegularExpression("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")]
+    [StringLength(256, ErrorMessage = "max len 256")]
+    [EmailAddress(ErrorMessage = "Invalid Email address")]
     public required string Email { get; set; }
 
     [Required]
@@ -22,6 +20,6 @@ public class UpdatePatientDTO
     [Required]
     public Gender Gender { get; set; }
 
-    [StringLength(256)]
+    [StringLength(256, ErrorMessage = "max len 256")]
     public string? PhoneNumber { get; set; }
 }

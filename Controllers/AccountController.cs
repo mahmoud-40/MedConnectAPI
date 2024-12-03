@@ -1,314 +1,271 @@
-﻿using Medical.Data.Interface;
+﻿using AutoMapper;
+using Medical.Data.Interface;
 using Medical.DTOs.Account;
 using Medical.Models;
 using Medical.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics.Eventing.Reader;
-using System.Security.Claims;
 
-namespace Medical.Controllers
+namespace Medical.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+
+public class AccountController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
+    private readonly UserManager<AppUser> usermanager;
+    private readonly IEmailService emailService;
+    private readonly IAuthService authService;
+    private readonly SignInManager<AppUser> signIn;
+    private readonly IValidator validator;
+    private readonly IMapper mapper;
 
-    public class AccountController : ControllerBase
+    public AccountController(UserManager<AppUser> _usermanager, IAuthService authService, SignInManager<AppUser> signIn, IEmailService emailService, IValidator validator, IMapper mapper)
     {
-        private readonly UserManager<AppUser> usermanager;
-        private readonly RoleManager<IdentityRole> identityrole;
-        private readonly IEmailService emailService;
-        private readonly IAuthService authService;
+        this.usermanager = _usermanager;
+        this.emailService = emailService;
+        this.authService = authService;
+        this.signIn = signIn;
+        this.validator = validator;
+        this.mapper = mapper;
+    }
 
-        public AccountController(UserManager<AppUser> _usermanager, RoleManager<IdentityRole> _identityrole, IEmailService emailService, IAuthService authService)
+    [HttpPost]
+    [SwaggerOperation(Summary = "Register a new user and assigns them to a role", Description ="Registers a new user, sends an email confirmation link, and assigns the user to the appropriate role.\n\n" +
+        "Note:\n" +
+        "- UserType of  **Patient** is `1`.\n"+
+         "- UserType of  **Provider** is `2`.\n\n" +
+          "- Gender of  **Male** is `1`.\n" +
+         "- Gender of  **Female** is `2`.\n\n" +
+         "- Shift of  **Morning** for Provider(Clinic) is `1`.\n" +
+         "- Shift of  **Evening** for Provider(Clinic) is `2`.\n" +
+         "- Shift of  **Night**  for Provider(Clinic) is `3`.\n\n" +
+        "https://localhost:7024/api/Account/Register")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Register([FromBody] RegisterDTO registerPatientDTO)
+    {
+        if (registerPatientDTO == null)
+            return BadRequest("Invalid Data");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        AppUser user;
+
+        if (registerPatientDTO.UserType == AppUserType.Patient)
         {
-            this.usermanager = _usermanager;
-            this.identityrole = _identityrole;
-            this.emailService = emailService;
-            this.authService = authService;
+            if (!validator.IsBirthdayValid(registerPatientDTO.BirthDay, out Exception ex))
+                return BadRequest(ex.Message);
+
+            user = mapper.Map<Patient>(registerPatientDTO);
+        }
+        else if (registerPatientDTO.UserType == AppUserType.Provider)
+        {
+            user = mapper.Map<Provider>(registerPatientDTO);
+        }
+        else
+        {
+            return BadRequest("Invalid User Type");
         }
 
+        IdentityResult result = await usermanager.CreateAsync(user, registerPatientDTO.Password);
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
+        
+        result = await usermanager.AddToRoleAsync(user, registerPatientDTO.UserType.ToString());
+        if (!result.Succeeded)
+            return BadRequest(result.Errors);
 
+        // Generate email confirmation token
+        string? token = await usermanager.GenerateEmailConfirmationTokenAsync(user);
 
-        #region Register
-        [HttpPost]
-        [SwaggerOperation(Summary = "Register a new user and assigns them to a role", Description ="Registers a new user, sends an email confirmation link, and assigns the user to the appropriate role.\n\n" +
-            "Note:\n" +
-            "- UserType of  **Patient** is `1`.\n"+
-             "- UserType of  **Provider** is `2`.\n\n" +
-              "- Gender of  **Male** is `1`.\n" +
-             "- Gender of  **Female** is `2`.\n\n" +
-             "- Shift of  **Morning** for Provider(Clinic) is `1`.\n" +
-             "- Shift of  **Evening** for Provider(Clinic) is `2`.\n" +
-             "- Shift of  **Night**  for Provider(Clinic) is `3`.\n\n" +
-            "https://localhost:7024/api/Account/Register")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Register([FromBody] RegisterDTO registerPatientDTO)
-        {
-            if (!ModelState.IsValid)
-            {
+        // Generate confirmation link
+        string? confirmationLink = Url.Action("ConfirmEmail", "Account",
+            new { userId = user.Id, token = token }, Request.Scheme);
 
-                return BadRequest(ModelState);
+        // await emailService.SendEmailAsync(user.Email!, "Confirm Your Email",
+        //     $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
+        await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
+            $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
-            }
+        return Ok("User Registered and Please Confirm Your Email");
+    }
 
-
-            else
-            {
-
-                AppUser user;
-
-                if (registerPatientDTO.UserType == AppUserType.Patient) { 
-
-                    user = new Patient
-                    {
-                        UserName = registerPatientDTO.FullName,
-                        Email = registerPatientDTO.Email,
-                        BirthDay = registerPatientDTO.BirthDay,
-                        Address = registerPatientDTO.Address,
-                        Gender = registerPatientDTO.Gender
-                    };
-            }
-
-                else if (registerPatientDTO.UserType == AppUserType.Provider)
-                {
-                    user = new Provider
-                    {
-                        UserName = registerPatientDTO.FullName,
-                        Email = registerPatientDTO.Email,
-                        Shift = registerPatientDTO.Shift
-                    };
-                }
-                else
-                {
-                    return BadRequest("Invalid User");
-                }
-
-
-                var result = await usermanager.CreateAsync(user, registerPatientDTO.Password);
-
-                if (result.Succeeded)
-                {
-
-                    // Generate email confirmation token
-                    var token = await usermanager.GenerateEmailConfirmationTokenAsync(user);
-
-                    // Generate confirmation link
-                    var confirmationLink = Url.Action("ConfirmEmail", "Account",
-                        new { userId = user.Id, token = token }, Request.Scheme);
-
-                    // Send email
-                    await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
-                        $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
-
-                    //Assigned To Role
-                    var role = await usermanager.AddToRoleAsync(user,registerPatientDTO.UserType.ToString());
-                    if (role.Succeeded)
-                    {
-                        return Ok("User Registered and Please Confirm Your Email");
-
-                    }
-                    else
-                    {
-                        return BadRequest(role.Errors);
-                    }
-
-                }
-                else
-                {
-                    return BadRequest(result.Errors);
-
-                }
-            
-
-            }
-
-        }
-        #endregion
-
-        #region Login
-        [HttpPost("Login")]
-        [SwaggerOperation(
-    Summary = "Authenticate a user and retrieve a JWT token",
-    Description = "Logs in a user by validating their credentials and returns a JWT token if successful.\n\n" +
+    [HttpPost("Login")]
+    [SwaggerOperation(
+        Summary = "Authenticate a user and retrieve a JWT token",
+        Description = "Logs in a user by validating their credentials and returns a JWT token if successful.\n\n" +
             "https://localhost:7024/api/Account/Login"
-       )]
-        [ProducesResponseType(typeof(AuthDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Login(LoginDTO loginDTO)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+    )]
+    [ProducesResponseType(typeof(AuthDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> Login(LoginDTO loginDTO)
+    {
+        if (loginDTO == null)
+            return BadRequest("Invalid Data");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-            var result = await authService.LoginAsync(loginDTO);
+        AuthDTO? result = await authService.LoginAsync(loginDTO);
+        if (result == null)
+            return NotFound();
 
-            if (!result.IsAuthenticated)
-                return Unauthorized();
+        if (!result.IsAuthenticated)
+            return Unauthorized();
 
-            return Ok(result);
-        }
-
-
-        #endregion
-
-
-
-        #region ConfrimEmail
+        return Ok(result);
+    }
 
 
-        [HttpGet("ConfirmEmail")]
+    [HttpGet("ConfirmEmail")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<IActionResult> ConfirmEmail(string userId, string token)
+    {
+        if (userId == null || token == null)
+            return BadRequest("Invalid email confirmation request.");
 
+        var user = await usermanager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound($"User Not Found");
 
-        [ApiExplorerSettings(IgnoreApi = true)]
+        var result = await usermanager.ConfirmEmailAsync(user, token);
 
+        if (!result.Succeeded)
+            return BadRequest("Email confirmed Failed.");
+        
+        return Ok("Email confirmed successfully.");
+    }
 
-        public async Task<IActionResult> ConfirmEmail(string userId, string token)
-        {
-            if (userId == null || token == null)
-                return BadRequest("Invalid email confirmation request.");
-
-            var user = await usermanager.FindByIdAsync(userId);
-            if (user == null)
-                return NotFound($"User Not Found");
-
-            var result = await usermanager.ConfirmEmailAsync(user, token);
-            if (result.Succeeded)
-            {
-                return Ok("Email confirmed successfully.");
-            }
-            else
-            {
-                return BadRequest("Email confirmed Failed.");
-            }
-
-        }
-        #endregion
-
-        #region ForgetPassword
-        [HttpPost("ForgetPassword")]
-        [SwaggerOperation(
-    Summary = "Request a password reset link",
-    Description = "Allows a user to request a password reset link. If the email is valid, a reset link is sent to the user's email address.\n\n" +
+    [HttpPost("ForgetPassword")]
+    [SwaggerOperation(
+        Summary = "Request a password reset link",
+        Description = "Allows a user to request a password reset link. If the email is valid, a reset link is sent to the user's email address.\n\n" +
             "https://localhost:7024/api/Account/ForgetPassword"
-        )]
-          [ProducesResponseType(typeof(ForgetPasswordDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    )]
+    [ProducesResponseType(typeof(ForgetPasswordDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
 
-        public async Task<IActionResult> ForgetPassword(ForgetPasswordDTO forgetPasswordDTO)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest("Invalid email format or missing fields.");
-            }
+    public async Task<IActionResult> ForgetPassword(ForgetPasswordDTO forgetPasswordDTO)
+    {
+        if (forgetPasswordDTO == null)
+            return BadRequest("Invalid Data");
+        if (!ModelState.IsValid)
+            return BadRequest("Invalid email format or missing fields.");
 
-            var user = await usermanager.FindByEmailAsync(forgetPasswordDTO.Email);
+        var user = await usermanager.FindByEmailAsync(forgetPasswordDTO.Email);
+        if (user == null)
+            return NotFound("Email Not Found");
 
+        var token = await usermanager.GeneratePasswordResetTokenAsync(user);
+        var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
 
-            if (user != null)
-            {
-                var token = await usermanager.GeneratePasswordResetTokenAsync(user);
+        // await emailService.SendEmailAsync(user.Email!, "ResetPassword", "Please reset your email." + passwordResetLink);
+        await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email." + passwordResetLink);
 
-                var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
-
-                emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email."+passwordResetLink );
-                return Ok(new { Message = "If an account with that email exists, a password reset link has been sent." });
-
-
-
-            }
-            else
-            {
-                return NotFound("Email Not Found");
-
-            }
-
-        }
-        #endregion
+        return Ok (new { Message = "If an account with that email exists, a password reset link has been sent." });
+    }
 
 
-        #region ResetPassword
+    [HttpGet("ResetPassword")]
+    [ApiExplorerSettings(IgnoreApi = true)]
 
-        [HttpGet("ResetPassword")]
-        [ApiExplorerSettings(IgnoreApi = true)]
+    public IActionResult ResetPassword(string token, string email)
+    {
+        var model = new ResetPasswordDTO { Email = email, Token = token };
+        return Ok(new { model });
+    }
 
-
-
-        public async Task<IActionResult> ResetPassword(string token, string email)
-        {
-            var model = new ResetPasswordDTO { Email = email, Token = token };
-
-            return Ok(
-
-                new
-                {
-                    model
-                });
-
-        }
-        [HttpPost]
-        [Route("ResetPassword")]
-        [SwaggerOperation(
-    Summary = "Reset the user's password",
-    Description = "Allows a user to reset their password using a token received via email.\n\n"+
+    [HttpPost]
+    [Route("ResetPassword")]
+    [SwaggerOperation(
+        Summary = "Reset the user's password",
+        Description = "Allows a user to reset their password using a token received via email.\n\n"+
             "https://localhost:7024/api/Account/ResetPassword"
-      )]
-        [ProducesResponseType(typeof(ResetPasswordDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    )]
+    [ProducesResponseType(typeof(ResetPasswordDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
 
-        public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPasswordDTO)
-        {
-            var user = await usermanager.FindByEmailAsync(resetPasswordDTO.Email!);
+    public async Task<IActionResult> ResetPassword(ResetPasswordDTO resetPasswordDTO)
+    {
+        if (resetPasswordDTO == null)
+            return BadRequest("Invalid Data");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-            if (ModelState.IsValid)
-            {
-                if (user != null)
-                {
-                    
+        var user = await usermanager.FindByEmailAsync(resetPasswordDTO.Email!);
+        if (user == null)
+            return NotFound("Email Not Found");
 
-                    var result = await usermanager.ResetPasswordAsync(user, resetPasswordDTO.Token!, resetPasswordDTO.Password!);
+        var result = await usermanager.ResetPasswordAsync(user, resetPasswordDTO.Token ?? "", resetPasswordDTO.Password ?? "");
+        if (!result.Succeeded)
+            return BadRequest("Reset Password is Failed");
 
-                    if (result.Succeeded)
-                    {
-                        return Ok("Password Is Reseted");
-                    }
-
-
-
-                    else
-                    {
-                        return BadRequest("Reset Password is Failed ");
-                    }
+        return Ok("Password has been reset successfully");
+    }
 
 
-                }
-                else
-                {
-                    return NotFound("Email Not Found");
-                }
-            }
-            else
-            {
-                return BadRequest(ModelState);
-            }
+    [SwaggerOperation(
+        Summary = "Delete an Account",
+        Description = "Deleta an Account Based on Id Need Admin Role" +
+            "https://localhost:7024/api/Account"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("{id}")]
+    public IActionResult DeleteAccount(string id)
+    {
+        AppUser? user = usermanager.FindByIdAsync(id).Result;
+        if (user == null)
+            return NotFound();
 
+        IdentityResult res = usermanager.DeleteAsync(user).Result;
 
-        }
-        #endregion
+        if (!res.Succeeded)
+            return BadRequest(res.Errors);
 
+        return Ok();
+    }
+
+    [SwaggerOperation(
+        Summary = "Delete Profile",
+        Description = "Delete Profile Based on Login User" +
+            "https://localhost:7024/api/Account"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize]
+    [HttpDelete("/profile")]
+    public async Task<IActionResult> DeleteProfile()
+    {
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+
+        AppUser? user = usermanager.FindByNameAsync(User.Identity.Name).Result;
+        if (user == null)
+            return NotFound();
+        
+        IdentityResult res = usermanager.DeleteAsync(user).Result;
+        if (!res.Succeeded)
+            return BadRequest(res.Errors);
+        
+        await signIn.SignOutAsync();
+        return Ok();
     }
 }
-    
-

@@ -7,7 +7,7 @@ public class Doctor : BaseEntity
 {
     [Required]
     [StringLength(256)]
-    public string? FullName { get; set; }
+    public required string FullName { get; set; }
 
     [StringLength(256)]
     public string? Title { get; set; }
