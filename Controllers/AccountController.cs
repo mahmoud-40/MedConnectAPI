@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Medical.Data.Interface;
+using Medical.Data.UnitOfWorks;
 using Medical.DTOs.Account;
 using Medical.Models;
 using Medical.Utils;
@@ -19,15 +20,17 @@ public class AccountController : ControllerBase
     private readonly IEmailService emailService;
     private readonly IAuthService authService;
     private readonly SignInManager<AppUser> signIn;
+    private readonly IUnitOfWork unit;
     private readonly IValidator validator;
     private readonly IMapper mapper;
 
-    public AccountController(UserManager<AppUser> _usermanager, IAuthService authService, SignInManager<AppUser> signIn, IEmailService emailService, IValidator validator, IMapper mapper)
+    public AccountController(UserManager<AppUser> _usermanager, IAuthService authService, SignInManager<AppUser> signIn, IUnitOfWork unit, IEmailService emailService, IValidator validator, IMapper mapper)
     {
         this.usermanager = _usermanager;
         this.emailService = emailService;
         this.authService = authService;
         this.signIn = signIn;
+        this.unit = unit;
         this.validator = validator;
         this.mapper = mapper;
     }
@@ -91,6 +94,10 @@ public class AccountController : ControllerBase
         await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
             $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
+        await unit.NotificationRepository.Add(user.Id, "Welcome to the Medical System");
+        await unit.NotificationRepository.Add(user.Id, "Please Confirm Your Email");
+        await unit.Save();
+
         return Ok("User Registered and Please Confirm Your Email");
     }
 
@@ -114,7 +121,7 @@ public class AccountController : ControllerBase
 
         AuthDTO? result = await authService.LoginAsync(loginDTO);
         if (result == null)
-            return NotFound();
+            return Unauthorized();
 
         if (!result.IsAuthenticated)
             return Unauthorized();
@@ -139,6 +146,8 @@ public class AccountController : ControllerBase
         if (!result.Succeeded)
             return BadRequest("Email confirmed Failed.");
         
+        await unit.NotificationRepository.Add(user.Id, "Email Confirmed Successfully");
+        await unit.Save();
         return Ok("Email confirmed successfully.");
     }
 
@@ -161,18 +170,21 @@ public class AccountController : ControllerBase
             return BadRequest("Invalid email format or missing fields.");
 
         var user = await usermanager.FindByEmailAsync(forgetPasswordDTO.Email);
-        if (user == null)
-            return NotFound("Email Not Found");
 
-        var token = await usermanager.GeneratePasswordResetTokenAsync(user);
-        var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
+        if (user != null)
+        {
+            if (!await usermanager.IsEmailConfirmedAsync(user))
+                return BadRequest("Email is not confirmed.");
+            
+            var token = await usermanager.GeneratePasswordResetTokenAsync(user);
+            var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
 
-        // await emailService.SendEmailAsync(user.Email!, "ResetPassword", "Please reset your email." + passwordResetLink);
-        await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email." + passwordResetLink);
+            // await emailService.SendEmailAsync(user.Email!, "ResetPassword", "Please reset your email." + passwordResetLink);
+            await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email." + passwordResetLink);
+        }
 
         return Ok (new { Message = "If an account with that email exists, a password reset link has been sent." });
     }
-
 
     [HttpGet("ResetPassword")]
     [ApiExplorerSettings(IgnoreApi = true)]
@@ -210,6 +222,7 @@ public class AccountController : ControllerBase
         if (!result.Succeeded)
             return BadRequest("Reset Password is Failed");
 
+        await unit.NotificationRepository.Add(user.Id, "Password Reset Successfully");
         return Ok("Password has been reset successfully");
     }
 

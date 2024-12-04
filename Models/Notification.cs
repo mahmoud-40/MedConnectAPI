@@ -8,9 +8,10 @@ public class Notification : BaseEntity
 {
     public bool IsSeen { get; set; } = false;
     public string? Message { get; set; }
+    public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("Appointment")]
-    public int AppointmentId { get; set; }
+    public required string UserId { get; set; }
 
-    public virtual Appointment? Appointment { get; set; }
+    public virtual AppUser? User { get; set; }
 }

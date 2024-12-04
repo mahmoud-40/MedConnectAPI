@@ -24,6 +24,4 @@ public class Appointment : BaseEntity
     public virtual Patient? Patient { get; set; }
     public virtual Provider? Provider { get; set; }
     public virtual Record? Record { get; set; }
-
-    public virtual List<Notification> Notification { get; set; } = new List<Notification>();
 }

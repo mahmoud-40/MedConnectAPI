@@ -74,7 +74,5 @@ namespace Medical.Data.Repository
             }
         }
 
-
-
     }
 }

@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
+using Medical.Data.Interface;
 using Medical.DTOs.Patients;
 using Medical.Models;
 using Medical.Utils;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,12 +14,14 @@ namespace Medical.Controllers;
 public class PatientsController : ControllerBase
 {
     private readonly UserManager<AppUser> userManager;
+    private readonly IUnitOfWork unit;
     private readonly IValidator validator;
     private readonly IMapper mapper;
 
-    public PatientsController(UserManager<AppUser> userManager, IValidator validator, IMapper mapper)
+    public PatientsController(UserManager<AppUser> userManager, IUnitOfWork unit, IValidator validator, IMapper mapper)
     {
         this.userManager = userManager;
+        this.unit = unit;
         this.validator = validator;
         this.mapper = mapper;
     }
@@ -48,7 +50,7 @@ public class PatientsController : ControllerBase
 
     [Authorize (Roles = "Patient")]
     [HttpPut("profile")]
-    public IActionResult EditProfile(UpdatePatientDTO patientDTO)
+    public async Task<IActionResult> EditProfile(UpdatePatientDTO patientDTO)
     {
         if (patientDTO == null)
             return BadRequest();
@@ -70,6 +72,7 @@ public class PatientsController : ControllerBase
         if (!res.Succeeded)
             return BadRequest(res.Errors);
 
+        await unit.NotificationRepository.Add(patient.Id, "Your profile has been updated.");
         return NoContent();
     }
 

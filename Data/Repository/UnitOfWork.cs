@@ -13,11 +13,12 @@ public class UnitOfWork : IUnitOfWork
         this.db = db;
     }
 
-    GenericRepository<Provider>? providerRepository;
-    GenericRepository<Doctor>? doctorRepository;
-    GenericRepository<Appointment>? appointmentRepository;
+    IGenericRepository<Provider>? providerRepository;
+    IGenericRepository<Doctor>? doctorRepository;
+    IGenericRepository<Appointment>? appointmentRepository;
+    INotificationRepository? notificationRepository;
 
-    public GenericRepository<Provider> ProviderRepository
+    public IGenericRepository<Provider> ProviderRepository
     {
         get
         {
@@ -29,7 +30,7 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    public GenericRepository<Doctor> DoctorRepository
+    public IGenericRepository<Doctor> DoctorRepository
     {
         get
         {
@@ -41,7 +42,7 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    public GenericRepository<Appointment> AppointmentRepository
+    public IGenericRepository<Appointment> AppointmentRepository
     {
         get
         {
@@ -50,6 +51,18 @@ public class UnitOfWork : IUnitOfWork
                 this.appointmentRepository = new GenericRepository<Appointment>(db);
             }
             return appointmentRepository;
+        }
+    }
+
+    public INotificationRepository NotificationRepository
+    {
+        get
+        {
+            if (this.notificationRepository == null)
+            {
+                this.notificationRepository = new NotificationRepository(db);
+            }
+            return notificationRepository;
         }
     }
 

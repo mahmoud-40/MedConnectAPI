@@ -10,4 +10,6 @@ public class AppUser : IdentityUser
     public string? Name { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public virtual List<Notification> Notification { get; set; } = new List<Notification>();
 }

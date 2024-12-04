@@ -10,6 +10,5 @@ public class LoginDTO
 
     [Required(ErrorMessage = "Password required")]
     [StringLength(256, ErrorMessage = "max len 256")]
-    [RegularExpression("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*()[]{}<>~_-]).{6,}$", ErrorMessage = "Not Strong Password")]
     public required string Password { get; set; }
 }

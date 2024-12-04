@@ -45,6 +45,19 @@ public class MedicalContext : IdentityDbContext
             .HasForeignKey(a => a.RecordId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        #region Indexes
+        modelBuilder.Entity<AppUser>()
+            .HasIndex(u => u.UserName)
+            .IsUnique();
+        modelBuilder.Entity<AppUser>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+        modelBuilder.Entity<Notification>()
+        .HasIndex(n => n.ReleaseDate);
+        modelBuilder.Entity<Notification>()
+        .HasIndex(n => new { n.ReleaseDate, n.IsSeen });
+        #endregion
+
         #region Seed Roles
         string adminRoleId = "0";
         string providerRoleId = "1";

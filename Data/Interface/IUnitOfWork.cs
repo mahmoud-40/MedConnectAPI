@@ -7,7 +7,8 @@ public interface IUnitOfWork
 {
     public Task Save();
 
-    public GenericRepository<Provider> ProviderRepository { get; }
-    public GenericRepository<Doctor> DoctorRepository { get; }
-    public GenericRepository<Appointment> AppointmentRepository { get; }
+    public IGenericRepository<Provider> ProviderRepository { get; }
+    public IGenericRepository<Doctor> DoctorRepository { get; }
+    public IGenericRepository<Appointment> AppointmentRepository { get; }
+    public INotificationRepository NotificationRepository { get; }
 }
