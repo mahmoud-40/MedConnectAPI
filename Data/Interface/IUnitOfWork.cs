@@ -10,5 +10,7 @@ namespace Medical.Data.Interface
         public GenericRepository<Provider> ProviderRepository { get; }
         public GenericRepository<Doctor> DoctorRepository { get; }
         public GenericRepository<Appointment> AppointmentRepository { get; }
+        public GenericRepository<Patient> PatientRepository { get; }
+        public GenericRepository<Record> RecordRepository { get; }
     }
 }

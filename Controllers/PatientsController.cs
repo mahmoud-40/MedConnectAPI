@@ -1,4 +1,5 @@
 ﻿using Medical.DTOs.Patients;
+using Medical.Migrations;
 using Medical.Models;
 using Medical.Utils;
 using Microsoft.AspNetCore.Http;
