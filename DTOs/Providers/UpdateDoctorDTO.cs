@@ -6,7 +6,9 @@ namespace Medical.DTOs.Providers
     {
         [Required]
         public int Id { get; set; }
-        public string FullName { get; set; }
+
+        [StringLength(256, ErrorMessage = "max len 256")]
+        public required string FullName { get; set; }
         public string? Title { get; set; }
         public DateOnly HireDate { get; set; }
         public int YearExperience { get; set; }

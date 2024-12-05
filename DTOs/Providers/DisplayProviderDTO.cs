@@ -12,4 +12,5 @@ public class DisplayProviderDTO
     public Shift Shift { get; set; }
     public float Rate { get; set; }
     public List<AddDoctorToProviderDTO> Doctors { get; set; } = new List<AddDoctorToProviderDTO>();
+    public TimeSpan MemberSince { get; set; }
 }

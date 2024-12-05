@@ -15,4 +15,7 @@ public class ViewPatientDTO
     public string? PhoneNumber { get; set; }
 
     public TimeSpan MemberSince { get; set; }
+
+    //List of Upcoming Appointments
+    //List of Unread Notifications
 }

@@ -5,6 +5,7 @@ namespace Medical.DTOs.Patients;
 
 public class UpdatePatientDTO
 {
+    [StringLength(256, ErrorMessage = "max len 256")]
     public required string Name { get; set; }
 
     [StringLength(256, ErrorMessage = "max len 256")]

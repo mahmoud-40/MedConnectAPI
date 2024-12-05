@@ -59,7 +59,7 @@ public class PatientsController : ControllerBase
         if (User.Identity?.Name == null)
             return Unauthorized();
 
-        Patient? patient = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().SingleOrDefault(e => e.UserName == User.Identity.Name);
+        Patient? patient = await userManager.FindByNameAsync(User.Identity.Name) as Patient;
         if (patient == null)
             return NotFound();
 

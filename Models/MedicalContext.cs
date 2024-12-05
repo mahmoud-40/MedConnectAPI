@@ -27,6 +27,7 @@ public class MedicalContext : IdentityDbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        //modelBuilder.Entity<Record>().HasKey(e => new {e.PatientId, })
         modelBuilder.Entity<Appointment>()
             .HasOne(a => a.Patient)
             .WithMany(p => p.Appointments)

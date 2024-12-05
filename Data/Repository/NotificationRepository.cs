@@ -30,7 +30,7 @@ public class NotificationRepository : GenericRepository<Notification>, INotifica
         if (notification != null)
         {
             notification.IsSeen = true;
-            Update(notification);
+            await Update(notification);
         }
     }
 
@@ -40,7 +40,7 @@ public class NotificationRepository : GenericRepository<Notification>, INotifica
         foreach (Notification notification in notifications)
         {
             notification.IsSeen = isSeen;
-            Update(notification);
+            await Update(notification);
         }
     }
 
