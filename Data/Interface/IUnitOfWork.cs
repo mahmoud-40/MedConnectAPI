@@ -11,4 +11,6 @@ public interface IUnitOfWork
     public IGenericRepository<Doctor> DoctorRepository { get; }
     public IGenericRepository<Appointment> AppointmentRepository { get; }
     public INotificationRepository NotificationRepository { get; }
+    public IGenericRepository<Patient> PatientRepository { get; }
+    public IGenericRepository<Record> RecordRepository { get; }
 }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Medical.Data.Interface;
 using Medical.DTOs.Patients;
 using Medical.Models;
