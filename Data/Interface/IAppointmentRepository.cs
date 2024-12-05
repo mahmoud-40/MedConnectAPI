@@ -1,13 +1,11 @@
 ﻿using Medical.Models;
 
-namespace Medical.Data.Interface
+namespace Medical.Data.Interface;
+
+public interface IAppointmentRepository : IGenericRepository<Appointment>
 {
-    public interface IAppointmentRepository
-    {
-        Task<Appointment?> GetById(int id);
-        Task<IEnumerable<Appointment>> GetAll();
-        Task Add(Appointment appointment);
-        void Update(Appointment appointment);
-        void Remove(Appointment appointment);
-    }
+    Task<List<Appointment>> GetAppointmentsByDoctorId(int doctorId);
+    Task<List<Appointment>> GetAppointmentsByPatientId(string patientId);
+    Task<List<Appointment>> GetAppointmentsByProviderId(string providerId);
+    Task<bool> IsAppointmentTaken(int doctorId, DateOnly date, int time);
 }

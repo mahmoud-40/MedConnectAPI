@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Medical.Data.Interface;
 using Medical.DTOs.Patients;
 using Medical.Models;
@@ -76,19 +76,22 @@ public class PatientsController : ControllerBase
         return NoContent();
     }
 
-    [Authorize(Roles = "Admin")]
-    [HttpGet("{id}/medical-records")]
-    public IActionResult GetMedicalRecordsGeneral(int id) { throw new NotImplementedException(); }
+    //[Authorize(Roles = "Admin")]
+    //[HttpGet("{id}/medical-records")]
+    //public IActionResult GetMedicalRecordsGeneral(int id) { throw new NotImplementedException(); }
 
-    [Authorize(Roles = "Patient")]
-    [HttpGet("medical-records")]
-    public IActionResult GetMedicalRecords() { throw new NotImplementedException(); }
+    //[Authorize(Roles = "Patient")]
+    //[HttpGet("medical-records")]
+    //public IActionResult GetMedicalRecords() { throw new NotImplementedException(); }
 
-    [Authorize(Roles = "Admin")]
-    [HttpGet("{id}/appointments")]
-    public IActionResult GetAppointmentsGeneral(int id) { throw new NotImplementedException(); }
+    //[Authorize(Roles = "Admin")]
+    //[HttpGet("{id}/appointments")]
+    //public IActionResult GetAppointmentsGeneral(int id)
+    //{
+    //    throw new NotImplementedException();
+    //}
 
-    [Authorize(Roles = "Patient")]
-    [HttpGet("appointments")]
-    public IActionResult GetAppointments() { throw new NotImplementedException(); }
+    //[Authorize(Roles = "Patient")]
+    //[HttpGet("appointments")]
+    //public IActionResult GetAppointments() { throw new NotImplementedException(); }
 }

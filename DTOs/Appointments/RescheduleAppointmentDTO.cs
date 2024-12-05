@@ -3,5 +3,5 @@
 public class RescheduleAppointmentDTO
 {
     public DateOnly NewDate { get; set; }
-    public TimeOnly NewTime { get; set; }
+    public int NewTime { get; set; }
 }

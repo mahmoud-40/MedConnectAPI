@@ -28,62 +28,63 @@ public class ProvidersController : ControllerBase
         this.mapper = mapper;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterProviderDTO _registerProviderDto)
-    {
-        if (ModelState.IsValid)
-        {
-            Provider _provider = new Provider
-            {
-                UserName = _registerProviderDto.UserName,
-                Email = _registerProviderDto.Email,
-                PhoneNumber = _registerProviderDto.PhoneNumber,
-                bio = _registerProviderDto.bio,
-                Shift = _registerProviderDto.Shift,
-                Rate = _registerProviderDto.Rate
-            };
+    //TODO: Dublicated (register in AccountController) => merge them into one
+    // [HttpPost("register")]
+    // public async Task<IActionResult> Register(RegisterProviderDTO _registerProviderDto)
+    // {
+    //     if (ModelState.IsValid)
+    //     {
+    //         Provider _provider = new Provider
+    //         {
+    //             UserName = _registerProviderDto.UserName,
+    //             Email = _registerProviderDto.Email,
+    //             PhoneNumber = _registerProviderDto.PhoneNumber,
+    //             bio = _registerProviderDto.bio,
+    //             Shift = _registerProviderDto.Shift,
+    //             Rate = _registerProviderDto.Rate
+    //         };
 
-            foreach (var doctor in _registerProviderDto.Doctors)
-            {
-                Doctor _doctor = new Doctor
-                {
-                    FullName = doctor.FullName,
-                    Title = doctor.Title,
-                    HireDate = doctor.HireDate,
-                    YearExperience = doctor.YearExperience,
-                    ProviderId = _provider.Id
-                };
+    //         foreach (var doctor in _registerProviderDto.Doctors)
+    //         {
+    //             Doctor _doctor = new Doctor
+    //             {
+    //                 FullName = doctor.FullName,
+    //                 Title = doctor.Title,
+    //                 HireDate = doctor.HireDate,
+    //                 YearExperience = doctor.YearExperience,
+    //                 ProviderId = _provider.Id
+    //             };
 
-                _provider.Doctors.Add(_doctor);
-                await _unit.DoctorRepository.Add(_doctor);
-            }
+    //             _provider.Doctors.Add(_doctor);
+    //             await _unit.DoctorRepository.Add(_doctor);
+    //         }
 
-            var result = _userManager.CreateAsync(_provider, _registerProviderDto.Password).Result;
+    //         var result = _userManager.CreateAsync(_provider, _registerProviderDto.Password).Result;
 
-            if (result.Succeeded)
-            {
-                var roleResult = _userManager.AddToRoleAsync(_provider, "Provider").Result;
+    //         if (result.Succeeded)
+    //         {
+    //             var roleResult = _userManager.AddToRoleAsync(_provider, "Provider").Result;
 
-                if (roleResult.Succeeded)
-                {
-                    await _unit.Save();
-                    return Ok(new { message = "Provider registered successfully" });
-                }
-                else
-                {
-                    return BadRequest(roleResult.Errors);
-                }
-            }
-            else
-            {
-                return BadRequest(result.Errors);
-            }
-        }
-        else
-        {
-            return BadRequest(ModelState);
-        }
-    }
+    //             if (roleResult.Succeeded)
+    //             {
+    //                 await _unit.Save();
+    //                 return Ok(new { message = "Provider registered successfully" });
+    //             }
+    //             else
+    //             {
+    //                 return BadRequest(roleResult.Errors);
+    //             }
+    //         }
+    //         else
+    //         {
+    //             return BadRequest(result.Errors);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         return BadRequest(ModelState);
+    //     }
+    // }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProvider(string id)
@@ -200,7 +201,7 @@ public class ProvidersController : ControllerBase
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        var _providerAppointments = _provider.Appointments;
+        var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
 
         List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
 
@@ -235,7 +236,7 @@ public class ProvidersController : ControllerBase
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        var _providerAppointments = _provider.Appointments;
+        var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
 
         List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
 
@@ -308,7 +309,6 @@ public class ProvidersController : ControllerBase
         AddDoctorToProviderDTO view = mapper.Map<AddDoctorToProviderDTO>(doctor);
         return CreatedAtAction(nameof(GetProviderDoctors), new { id = _provider.Id }, view);
     }
-
 
     // isn't this a bad practice? should be a separate endpoint
     // also not making it as making an appointment?!

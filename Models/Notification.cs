@@ -10,7 +10,7 @@ public class Notification : BaseEntity
     public string? Message { get; set; }
     public DateTime ReleaseDate { get; set; } = DateTime.UtcNow;
 
-    [ForeignKey("Appointment")]
+    [ForeignKey("User")]
     public required string UserId { get; set; }
 
     public virtual AppUser? User { get; set; }

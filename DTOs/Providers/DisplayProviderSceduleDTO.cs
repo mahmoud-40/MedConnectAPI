@@ -10,7 +10,7 @@ public class DisplayProviderSceduleDTO
     public string? PatientName { get; set; }
     public DateOnly Date { get; set; }
 
-    public TimeOnly Time { get; set; }
+    public int Time { get; set; }
 
     public Status Status { get; set; } = Status.Waiting;
 

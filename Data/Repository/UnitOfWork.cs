@@ -15,7 +15,7 @@ public class UnitOfWork : IUnitOfWork
 
     IGenericRepository<Provider>? providerRepository;
     IGenericRepository<Doctor>? doctorRepository;
-    IGenericRepository<Appointment>? appointmentRepository;
+    AppointmentRepository? appointmentRepository;
     INotificationRepository? notificationRepository;
     IGenericRepository<Patient>? patientRepository;
     IGenericRepository<Record>? recordRepository;
@@ -44,13 +44,13 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
-    public IGenericRepository<Appointment> AppointmentRepository
+    public AppointmentRepository AppointmentRepository
     {
         get
         {
             if (this.appointmentRepository == null)
             {
-                this.appointmentRepository = new GenericRepository<Appointment>(db);
+                this.appointmentRepository = new AppointmentRepository(db);
             }
             return appointmentRepository;
         }
