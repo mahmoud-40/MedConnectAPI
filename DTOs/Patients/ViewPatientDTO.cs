@@ -1,4 +1,6 @@
-﻿using Medical.Utils;
+﻿using Medical.DTOs.Appointments;
+using Medical.DTOs.Notifications;
+using Medical.Utils;
 
 namespace Medical.DTOs.Patients;
 
@@ -10,12 +12,8 @@ public class ViewPatientDTO
     public string? Address { get; set; }
     public Gender Gender { get; set; }
 
-    public string? UserName { get; set; }
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
 
     public TimeSpan MemberSince { get; set; }
-
-    //List of Upcoming Appointments
-    //List of Unread Notifications
 }

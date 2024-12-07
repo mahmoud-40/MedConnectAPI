@@ -1,32 +1,16 @@
-﻿using Medical.DTOs.Patients;
+﻿using Medical.DTOs.Doctors;
+using Medical.DTOs.Patients;
 using Medical.Models;
 
 namespace Medical.Utils;
 public interface IConverter
 {
-    ViewPatientDTO ToPatientDTO(Patient patient);
     int GetAge(DateOnly birthday);
     TimeSpan CalcDuration(DateTime Start, DateTime? End = null);
     TimeSpan CalcDuration(DateOnly Start, DateOnly? End = null);
 }
 public class Converter : IConverter
 {
-    public ViewPatientDTO ToPatientDTO(Patient patient)
-    {
-        return new ViewPatientDTO()
-        {
-            Id = patient.Id,
-            Name = patient.Name,
-            Age = GetAge(patient.BirthDay),
-            Address = patient.Address,
-            Gender = patient.Gender,
-            UserName = patient.UserName,
-            Email = patient.Email,
-            PhoneNumber = patient.PhoneNumber,
-            MemberSince = CalcDuration(patient.CreatedAt)
-        };
-    }
-
     public int GetAge(DateOnly birthday)
     {
         DateOnly today = DateOnly.FromDateTime(DateTime.Today);

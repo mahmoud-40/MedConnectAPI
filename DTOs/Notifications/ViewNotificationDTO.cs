@@ -1,6 +1,6 @@
 using System;
 
-namespace Medical.DTOs.Notification;
+namespace Medical.DTOs.Notifications;
 
 public class ViewNotificationDTO
 {
