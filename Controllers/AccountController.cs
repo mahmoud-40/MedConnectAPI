@@ -49,6 +49,7 @@ public class AccountController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Route("Register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO registerPatientDTO)
     {
         if (registerPatientDTO == null)
