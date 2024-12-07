@@ -13,6 +13,6 @@ public class ViewProviderDTO
 
     public string? Email { get; set; }
     public string? PhoneNumber { get; set; }
-    public List<AddDoctorDTO> Doctors { get; set; } = new List<AddDoctorDTO>();
+    public List<ViewDoctorDTO> Doctors { get; set; } = new List<ViewDoctorDTO>();
     public TimeSpan MemberSince { get; set; }
 }

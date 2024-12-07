@@ -31,13 +31,7 @@ public class MapperConfig : Profile
 
         CreateMap<Provider, ViewProviderDTO>()
             .ForMember(dest => dest.MemberSince, opt => opt.MapFrom(src => Converter.CalcDuration(src.CreatedAt, null)))
-            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors.Select(d => new AddDoctorDTO
-            {
-                FullName = d.FullName,
-                Title = d.Title,
-                HireDate = d.HireDate,
-                YearExperience = d.YearExperience
-            }).ToList()));
+            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors));
         CreateMap<UpdateProviderDTO, Provider>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
@@ -52,18 +46,23 @@ public class MapperConfig : Profile
             .ForMember(dest => dest.Since, opt => opt.MapFrom(src => Converter.CalcDuration(src.ReleaseDate, null)));
         
         CreateMap<Record, ViewRecordDTO>()
-            .ForMember(dest => dest.Since, opt => opt.MapFrom(src => Converter.CalcDuration(src.CreatedAt, null)));
+            .ForMember(dest => dest.Since, opt => opt.MapFrom(src => Converter.CalcDuration(src.CreatedAt, null)))
+            .ForMember(dest => dest.LastUpdate, opt => opt.MapFrom(src => Converter.CalcDuration(src.UpdatedAt, null)));
         CreateMap<Record, ViewRecordByPatientDTO>()
-            .ForMember(dest => dest.Provider, opt => opt.MapFrom(src => src.Provider));
+            .ForMember(dest => dest.Provider, opt => opt.MapFrom(src => src.Provider))
+            .ForMember(dest => dest.Since, opt => opt.MapFrom(src => Converter.CalcDuration(src.CreatedAt, null)))
+            .ForMember(dest => dest.LastUpdate, opt => opt.MapFrom(src => Converter.CalcDuration(src.UpdatedAt, null)));
         CreateMap<Record, ViewRecordByProviderDTO>()
-            .ForMember(dest => dest.Patient, opt => opt.MapFrom(src => src.Patient));
+            .ForMember(dest => dest.Patient, opt => opt.MapFrom(src => src.Patient))
+            .ForMember(dest => dest.Since, opt => opt.MapFrom(src => Converter.CalcDuration(src.CreatedAt, null)))
+            .ForMember(dest => dest.LastUpdate, opt => opt.MapFrom(src => Converter.CalcDuration(src.UpdatedAt, null)));
         CreateMap<AddRecordDTO, Record>();
         CreateMap<AddRecordByProviderDTO, Record>();
         CreateMap<UpdateRecordDTO, Record>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         CreateMap<UpdateRecordByProviderDTO, Record>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-        
+
         CreateMap<Appointment, ViewAppointmentDTO>()
             .ForMember(dest => dest.PatientName, opt => opt.MapFrom(src => src.Patient!.Name ?? src.Patient.UserName))
             .ForMember(dest => dest.DoctorName, opt => opt.MapFrom(src => src.Doctor!.FullName))
