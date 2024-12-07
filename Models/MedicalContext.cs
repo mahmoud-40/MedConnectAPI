@@ -58,6 +58,9 @@ public class MedicalContext : IdentityDbContext
         .HasIndex(n => n.ReleaseDate);
         modelBuilder.Entity<Notification>()
         .HasIndex(n => new { n.ReleaseDate, n.IsSeen });
+        modelBuilder.Entity<Record>()
+            .HasIndex(e => new { e.PatientId, e.ProviderId })
+            .IsUnique();
         #endregion
 
         #region Seed Roles

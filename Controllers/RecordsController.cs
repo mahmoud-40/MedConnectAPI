@@ -1,6 +1,6 @@
 ﻿using System.Reflection.Metadata;
 using Medical.Data.Interface;
-using Medical.DTOs.Patients;
+using Medical.DTOs.Doctors;
 using Medical.DTOs.Records;
 using Medical.Models;
 using Microsoft.AspNetCore.Authorization;
