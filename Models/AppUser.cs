@@ -11,5 +11,5 @@ public class AppUser : IdentityUser
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public virtual List<Notification> Notification { get; set; } = new List<Notification>();
+    public virtual List<Notification> Notifications { get; set; } = new List<Notification>();
 }

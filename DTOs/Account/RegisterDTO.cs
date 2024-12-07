@@ -19,11 +19,9 @@ public class RegisterDTO
     public required string Email { get; set; }
 
     [Required(ErrorMessage = "Password required")]
-    // [RegularExpression("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*()[]{}<>~_-]).{6,}$", ErrorMessage = "Not Strong Password")]
     public required string Password { get; set; }
 
     [Required(ErrorMessage = "Confirm Password required")]
-    // [RegularExpression("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*()[]{}<>~_-]).{6,}$", ErrorMessage = "Not Strong Password")]
     [Compare("Password", ErrorMessage = "Passwords do not match.")]
     public required string ConfirmPassword { get; set; }
 

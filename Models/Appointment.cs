@@ -9,7 +9,6 @@ public class Appointment : BaseEntity
     [Required]
     public DateOnly Date { get; set; }
 
-
     [Required]
     [Range(0, 24)]
     public int Time { get; set; }
