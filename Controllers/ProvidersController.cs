@@ -1,15 +1,13 @@
 ﻿using AutoMapper;
 using Medical.Data.Interface;
-using Medical.Data.Repository;
-using Medical.Data.UnitOfWorks;
-using Medical.DTOs.Patients;
+using Medical.DTOs.Doctors;
 using Medical.DTOs.Providers;
-using Medical.DTOs.ProvidersDTOs;
+using Medical.DTOs.Records;
 using Medical.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Medical.Controllers;
 
@@ -28,90 +26,55 @@ public class ProvidersController : ControllerBase
         this.mapper = mapper;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterProviderDTO _registerProviderDto)
+    #region  Get Providers
+    [SwaggerOperation(
+        Summary = "Get all providers",
+        Description = "Get all providers, Requires Admin Role\n\n" +
+            "Example: `/api/providers`"
+    )]
+    [ProducesResponseType(typeof(List<ViewProviderDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [HttpGet]
+    public async Task<IActionResult> GetProviders()
     {
-        if (ModelState.IsValid)
-        {
-            Provider _provider = new Provider
-            {
-                UserName = _registerProviderDto.UserName,
-                Email = _registerProviderDto.Email,
-                PhoneNumber = _registerProviderDto.PhoneNumber,
-                bio = _registerProviderDto.bio,
-                Shift = _registerProviderDto.Shift,
-                Rate = _registerProviderDto.Rate
-            };
+        List<Provider> _providers = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().ToList();
+        List<ViewProviderDTO> _providersDto = mapper.Map<List<ViewProviderDTO>>(_providers);
 
-            foreach (var doctor in _registerProviderDto.Doctors)
-            {
-                Doctor _doctor = new Doctor
-                {
-                    FullName = doctor.FullName,
-                    Title = doctor.Title,
-                    HireDate = doctor.HireDate,
-                    YearExperience = doctor.YearExperience,
-                    ProviderId = _provider.Id
-                };
-
-                _provider.Doctors.Add(_doctor);
-                await _unit.DoctorRepository.Add(_doctor);
-            }
-
-            var result = _userManager.CreateAsync(_provider, _registerProviderDto.Password).Result;
-
-            if (result.Succeeded)
-            {
-                var roleResult = _userManager.AddToRoleAsync(_provider, "Provider").Result;
-
-                if (roleResult.Succeeded)
-                {
-                    await _unit.Save();
-                    return Ok(new { message = "Provider registered successfully" });
-                }
-                else
-                {
-                    return BadRequest(roleResult.Errors);
-                }
-            }
-            else
-            {
-                return BadRequest(result.Errors);
-            }
-        }
-        else
-        {
-            return BadRequest(ModelState);
-        }
+        return Ok(_providersDto);
     }
 
+    [SwaggerOperation(
+        Summary = "Get provider by id",
+        Description = "Get provider by id, Requires Admin Role\n\n" +
+            "Example: `/api/providers/1`"
+    )]
+    [ProducesResponseType(typeof(ViewProviderDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetProvider(string id)
+    public async Task<IActionResult> GetProviderById(string id)
     {
         Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        DisplayProviderDTO _displayProviderDto = mapper.Map<DisplayProviderDTO>(_provider);
+        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider);
 
         return Ok(_displayProviderDto);
     }
 
-    [HttpGet("{id}/doctors")]
-    public async Task<IActionResult> GetProviderDoctors(string id)
-    {
-        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
-        if (_provider == null)
-            return NotFound(new { message = "Provider not found" });
-
-        List<AddDoctorToProviderDTO> _doctorsDto = mapper.Map<List<AddDoctorToProviderDTO>>(_provider.Doctors);
-
-        return Ok(_doctorsDto);
-    }
-
-    [Authorize (Roles = "Provider")]
-    [HttpGet("doctors")]
-    public async Task<IActionResult> GetMyProviderDoctor()
+    [SwaggerOperation(
+        Summary = "Get Provider Profile",
+        Description = "Get Provider Profile who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/profile`"
+    )]
+    [ProducesResponseType(typeof(ViewProviderDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Provider")]
+    [HttpGet("profile")]
+    public async Task<IActionResult> GetProviderProfile()
     {
         if (User.Identity?.Name == null)
             return Unauthorized();
@@ -120,13 +83,26 @@ public class ProvidersController : ControllerBase
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        List<AddDoctorToProviderDTO> _doctorsDto = mapper.Map<List<AddDoctorToProviderDTO>>(_provider.Doctors);
+        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider);
 
-        return Ok(_doctorsDto);
+        return Ok(_displayProviderDto);
     }
 
+    #endregion
+
+    #region Update Provider
+    [SwaggerOperation(
+        Summary = "Update provider data",
+        Description = "Update provider data, Requires Provider Role\n\n" +
+            "Example: `/api/providers/1`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
-    [HttpPut("{id}")]
+    [HttpPut]
     public async Task<IActionResult> Update(UpdateProviderDTO _providerDto)
     {
         if (_providerDto == null)
@@ -142,204 +118,318 @@ public class ProvidersController : ControllerBase
 
         mapper.Map(_providerDto, provider);
 
-        #region  not nessesary to update doctors here
-        foreach (var doctorDTO in _providerDto.Doctors)
-        {
-            var doctor = provider.Doctors.FirstOrDefault(d => d.Id == doctorDTO.Id);
-
-            if (doctor == null)
-            {
-                return NotFound(new { message = "Doctor not found" });
-            }
-
-            doctor.FullName = doctorDTO.FullName;
-            doctor.Title = doctorDTO.Title;
-            doctor.HireDate = doctorDTO.HireDate;
-            doctor.YearExperience = doctorDTO.YearExperience;
-
-            await _unit.DoctorRepository.Update(doctor);
-        }
-        #endregion
         await _unit.ProviderRepository.Update(provider);
+        await _unit.NotificationRepository.Add(provider.Id, "Profile updated successfully");
         await _unit.Save();
 
         return Ok(new { message = "Provider updated successfully" });
     }
 
-    #region Done Before in AccountController
-    // [HttpDelete("{id}")]
-    // public async Task<IActionResult> Delete(string id)
+    #endregion
+
+    #region Get Doctors By Provider
+    [SwaggerOperation(
+        Summary = "Get all doctors of provider",
+        Description = "Get all doctors of provider\n\n" +
+            "Example: `/api/providers/1/doctors`"
+    )]
+    [ProducesResponseType(typeof(List<ViewDoctorDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [HttpGet("{id}/doctors")]
+    public async Task<IActionResult> GetProviderDoctors(string id)
+    {
+        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        List<ViewDoctorDTO> _doctorsDto = mapper.Map<List<ViewDoctorDTO>>(_provider.Doctors);
+
+        return Ok(_doctorsDto);
+    }
+
+    [SwaggerOperation(
+        Summary = "Get all doctors of provider",
+        Description = "Get all doctors of provider who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/doctors`"
+    )]
+    [ProducesResponseType(typeof(List<ViewDoctorDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize (Roles = "Provider")]
+    [HttpGet("doctors")]
+    public async Task<IActionResult> GetMyProviderDoctor()
+    {
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+        
+        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        List<ViewDoctorDTO> _doctorsDto = mapper.Map<List<ViewDoctorDTO>>(_provider.Doctors);
+
+        return Ok(_doctorsDto);
+    }
+    #endregion
+
+    #region Add Doctor To Provider
+    [SwaggerOperation(
+        Summary = "Add doctor to provider",
+        Description = "Add doctor to provider, Requires Admin Role\n\n" +
+            "Example: `/api/providers/1/doctors`"
+    )]
+    [ProducesResponseType(typeof(AddDoctorDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Admin")]
+    [HttpPost("{id}/doctors")]
+    public async Task<IActionResult> AddDoctorToProvider(string id, AddDoctorDTO _addDoctorToProviderDto)
+    {
+        if (_addDoctorToProviderDto == null)
+            return BadRequest(new { message = "Doctor data is required" });
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = "Invalid doctor data" });
+
+        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        Doctor doctor = mapper.Map<Doctor>(_addDoctorToProviderDto);
+        doctor.ProviderId = _provider.Id;
+
+        _provider.Doctors.Add(doctor);
+        await _unit.DoctorRepository.Add(doctor);
+        await _unit.NotificationRepository.Add(_provider.Id, $"Doctor {doctor.FullName} has been added");
+        await _unit.Save();
+
+        ViewDoctorDTO view = mapper.Map<ViewDoctorDTO>(doctor);
+        return CreatedAtAction(nameof(GetProviderDoctors), new { id = _provider.Id }, view);
+    }
+
+    [SwaggerOperation(
+        Summary = "Add doctor to provider",
+        Description = "Add doctor to provider whose log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/doctors`"
+    )]
+    [ProducesResponseType(typeof(AddDoctorDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Provider")]
+    [HttpPost("doctors")]
+    public async Task<IActionResult> AddDoctor(AddDoctorDTO _addDoctorToProviderDto)
+    {
+        if (_addDoctorToProviderDto == null)
+            return BadRequest(new { message = "Doctor data is required" });
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = "Invalid doctor data" });
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+        
+        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        return await AddDoctorToProvider(_provider.Id, _addDoctorToProviderDto);
+    }
+    #endregion
+
+    #region  Update Doctor In Provider
+    [SwaggerOperation(
+        summary: "Edit doctor data in provider",
+        description: "Edit doctor data in provider who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/doctors/1`"
+    )]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Provider")]
+    [HttpPut("doctors/{doctorId}")]
+    public async Task<IActionResult> UpdateDoctor(int doctorId, UpdateDoctorDTO doctorDTO)
+    {
+        if (doctorDTO == null)
+            return BadRequest(new { message = "Doctor data is required" });
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = "Invalid doctor data" });
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+        
+        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        Doctor? doctor = _provider.Doctors.SingleOrDefault(d => d.Id == doctorId);
+        if (doctor == null)
+            return NotFound(new { message = "Doctor not found" });
+
+        mapper.Map(doctorDTO, doctor);
+        await _unit.DoctorRepository.Update(doctor);
+        await _unit.NotificationRepository.Add(_provider.Id, $"Doctor {doctor.FullName} data has been updated");
+        await _unit.Save();
+
+        return NoContent();
+    }
+    #endregion
+
+    #region Delete Doctor From Provider
+    [SwaggerOperation(
+        summary: "Delete doctor from provider",
+        description: "Delete doctor from provider who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/doctors/1`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Provider")]
+    [HttpDelete("doctors/{doctorId}")]
+    public async Task<IActionResult> DeleteDoctor(int doctorId)
+    {
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+        
+        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        Doctor? doctor = _provider.Doctors.SingleOrDefault(d => d.Id == doctorId);
+        if (doctor == null)
+            return NotFound(new { message = "Doctor not found" });
+
+        await _unit.DoctorRepository.Delete(doctor);
+        await _unit.NotificationRepository.Add(_provider.Id, $"Doctor {doctor.FullName} has been deleted");
+        await _unit.Save();
+
+        return Ok(new { message = "Doctor deleted successfully" });
+    }
+    #endregion
+
+    #region Scheduling
+    // [Authorize(Roles = "Admin")]
+    // [HttpGet("{id}/schedule")]
+    // public async Task<IActionResult> GetProviderSchedule(string id)
     // {
-    //     var _provider = (Provider)_userManager.FindByIdAsync(id).Result;
-
+    //     Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
     //     if (_provider == null)
-    //     {
     //         return NotFound(new { message = "Provider not found" });
+
+    //     var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
+
+    //     List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
+
+    //     foreach (var appointment in _providerAppointments)
+    //     {
+    //         var patientId = appointment.PatientId;
+    //         DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
+    //         {
+
+    //             PatientId = patientId,
+    //             PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
+    //             Status = appointment.Status,
+    //             Reason = appointment.Reason,
+    //             Date = appointment.Date,
+    //             Time = appointment.Time,
+    //         };
+
+    //         _providerScheduleDto.Add(_displayProviderSceduleDto);
     //     }
 
-    //     var result = _userManager.DeleteAsync(_provider).Result;
+    //     return Ok(_providerScheduleDto);
+    // }
 
-    //     if (result.Succeeded)
+    // [Authorize (Roles = "Provider")]
+    // [HttpGet("schedule")]
+    // public async Task<IActionResult> GetProviderSchedule()
+    // {
+    //     if (User.Identity?.Name == null)
+    //         return Unauthorized();
+        
+    //     Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+    //     if (_provider == null)
+    //         return NotFound(new { message = "Provider not found" });
+
+    //     var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
+
+    //     List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
+
+    //     foreach (var appointment in _providerAppointments)
     //     {
-    //         await _unit.ProviderRepository.Delete(_provider);
-    //         await _unit.Save();
-    //         return Ok(new { message = "Provider deleted successfully" });
+    //         var patientId = appointment.PatientId;
+    //         DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
+    //         {
+
+    //             PatientId = patientId,
+    //             PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
+    //             Status = appointment.Status,
+    //             Reason = appointment.Reason,
+    //             Date = appointment.Date,
+    //             Time = appointment.Time,
+    //         };
+
+    //         _providerScheduleDto.Add(_displayProviderSceduleDto);
     //     }
-    //     else
-    //     {
-    //         return BadRequest(result.Errors);
-    //     }
+
+    //     return Ok(_providerScheduleDto);
     // }
     #endregion
 
+    #region Get Records By Provider
+    [SwaggerOperation(
+        summary: "Get Records of Provider",
+        description: "Get Records of Provider, Requires Admin Role\n\n" +
+            "Example: `/api/providers/1/medical-records`"
+    )]
+    [ProducesResponseType(typeof(List<ViewRecordByProviderDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Admin")]
-    [HttpGet("{id}/schedule")]
-    public async Task<IActionResult> GetProviderSchedule(string id)
+    [HttpGet("{id}/medical-records")]
+    public async Task<IActionResult> GetProviderRecords(string id)
     {
-        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
-        if (_provider == null)
+        Provider? provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
+        if (provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        var _providerAppointments = _provider.Appointments;
+        List<Record> records = await _unit.RecordRepository.GetRecordsByProviderId(provider.Id);
+        List<ViewRecordByProviderDTO> view = mapper.Map<List<ViewRecordByProviderDTO>>(records);
 
-        List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
-
-        foreach (var appointment in _providerAppointments)
-        {
-            var patientId = appointment.PatientId;
-            DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
-            {
-
-                PatientId = patientId,
-                PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
-                Status = appointment.Status,
-                Reason = appointment.Reason,
-                Date = appointment.Date,
-                Time = appointment.Time,
-            };
-
-            _providerScheduleDto.Add(_displayProviderSceduleDto);
-        }
-
-        return Ok(_providerScheduleDto);
+        return Ok(view);
     }
 
-    [Authorize (Roles = "Provider")]
-    [HttpGet("schedule")]
-    public async Task<IActionResult> GetProviderSchedule()
-    {
-        if (User.Identity?.Name == null)
-            return Unauthorized();
-        
-        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
-        if (_provider == null)
-            return NotFound(new { message = "Provider not found" });
-
-        var _providerAppointments = _provider.Appointments;
-
-        List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
-
-        foreach (var appointment in _providerAppointments)
-        {
-            var patientId = appointment.PatientId;
-            DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
-            {
-
-                PatientId = patientId,
-                PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
-                Status = appointment.Status,
-                Reason = appointment.Reason,
-                Date = appointment.Date,
-                Time = appointment.Time,
-            };
-
-            _providerScheduleDto.Add(_displayProviderSceduleDto);
-        }
-
-        return Ok(_providerScheduleDto);
-    }
-
-    [Authorize(Roles = "Admin")]
-    [HttpPost("{id}/doctors")]
-    public async Task<IActionResult> AddDoctorToProvider(string id, AddDoctorToProviderDTO _addDoctorToProviderDto)
-    {
-        if (_addDoctorToProviderDto == null)
-            return BadRequest();
-        if (!ModelState.IsValid)
-            return BadRequest();
-
-        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
-        if (_provider == null)
-            return NotFound(new { message = "Provider not found" });
-
-        Doctor doctor = mapper.Map<Doctor>(_addDoctorToProviderDto);
-        doctor.ProviderId = _provider.Id;
-
-        _provider.Doctors.Add(doctor);
-        await _unit.DoctorRepository.Add(doctor);
-        await _unit.Save();
-
-        AddDoctorToProviderDTO view = mapper.Map<AddDoctorToProviderDTO>(doctor);
-        return CreatedAtAction(nameof(GetProviderDoctors), new { id = _provider.Id }, view);
-    }
-
+    [SwaggerOperation(
+        summary: "Get Records of Provider",
+        description: "Get Records of Provider who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/medical-records`"
+    )]
+    [ProducesResponseType(typeof(List<ViewRecordByProviderDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
-    [HttpPost("doctors")]
-    public async Task<IActionResult> AddDoctor(string id, AddDoctorToProviderDTO _addDoctorToProviderDto)
+    [HttpGet("medical-records")]
+    public async Task<IActionResult> GetMyProviderRecords()
     {
-        if (_addDoctorToProviderDto == null)
-            return BadRequest();
-        if (!ModelState.IsValid)
-            return BadRequest();
         if (User.Identity?.Name == null)
             return Unauthorized();
         
-        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
-        if (_provider == null)
+        Provider? provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        Doctor doctor = mapper.Map<Doctor>(_addDoctorToProviderDto);
-        doctor.ProviderId = _provider.Id;
+        List<Record> records = await _unit.RecordRepository.GetRecordsByProviderId(provider.Id);
+        List<ViewRecordByProviderDTO> view = mapper.Map<List<ViewRecordByProviderDTO>>(records);
 
-        _provider.Doctors.Add(doctor);
-        await _unit.DoctorRepository.Add(doctor);
-        await _unit.Save();
-
-        AddDoctorToProviderDTO view = mapper.Map<AddDoctorToProviderDTO>(doctor);
-        return CreatedAtAction(nameof(GetProviderDoctors), new { id = _provider.Id }, view);
+        return Ok(view);
     }
-
-
-    // isn't this a bad practice? should be a separate endpoint
-    // also not making it as making an appointment?!
-    // [HttpPost("{id}/patients")] 
-    // public async Task<IActionResult> AddPatientToProvider(string id, AddPatientToProviderDTO _addPatientToProviderDto)
-    // {
-    //     if (ModelState.IsValid)
-    //     {
-    //         var _provider = (Provider)_userManager.FindByIdAsync(id).Result;
-
-    //         if (_provider == null)
-    //         {
-    //             return NotFound(new { message = "Provider not found" });
-    //         }
-
-    //         Patient _patient = new Patient
-    //         {
-    //             Email = _addPatientToProviderDto.Email,
-    //             PhoneNumber = _addPatientToProviderDto.PhoneNumber,
-    //             Name = _addPatientToProviderDto.Name,
-    //             BirthDay = _addPatientToProviderDto.BirthDay,
-    //             Address = _addPatientToProviderDto.Address,
-    //             Gender = _addPatientToProviderDto.Gender,
-    //         };
-
-    //         await _unit.PatientRepository.Add(_patient);
-    //         await _unit.Save();
-
-    //         var result = _userManager.AddToRoleAsync(_patient, "Patient").Result;
-
-    //         return throw new NotImplementedException();
-    //     }
-    // }
+    #endregion
 }
+
+// Provider -> Edit Profile -> Manage Doctors -> Manage Records

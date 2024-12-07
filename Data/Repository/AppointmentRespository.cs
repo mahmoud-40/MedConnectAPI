@@ -4,38 +4,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Medical.Data.Repository
 {
-    public class AppointmentRepository : IAppointmentRepository
+    public class AppointmentRepository : GenericRepository<Appointment>, IAppointmentRepository
     {
-        private readonly DbContext _context;
+        private readonly MedicalContext db;
 
-        public AppointmentRepository(DbContext context)
+        public AppointmentRepository(MedicalContext _db) : base(_db)
         {
-            _context = context;
+            db = _db;
         }
 
-        public async Task<Appointment?> GetById(int id)
+        public async Task<List<Appointment>> GetAppointmentsByDoctorId(int doctorId)
         {
-            return await _context.Set<Appointment>().FindAsync(id);
+            return await db.Appointments.Where(e => e.DoctorId == doctorId).ToListAsync();
         }
 
-        public async Task<IEnumerable<Appointment>> GetAll()
+        public async Task<List<Appointment>> GetAppointmentsByPatientId(string patientId)
         {
-            return await _context.Set<Appointment>().ToListAsync();
+            return await db.Appointments.Where(e => e.PatientId == patientId).ToListAsync();
         }
 
-        public async Task Add(Appointment appointment)
+        public async Task<List<Appointment>> GetAppointmentsByProviderId(string providerId)
         {
-            await _context.Set<Appointment>().AddAsync(appointment);
+            return await db.Doctors.Where(e => e.ProviderId == providerId).SelectMany(e => e.Appointments).ToListAsync();
         }
 
-        public void Update(Appointment appointment)
+        public async Task<bool> IsAppointmentTaken(int doctorId, DateOnly date, int time)
         {
-            _context.Set<Appointment>().Update(appointment);
-        }
-
-        public void Remove(Appointment appointment)
-        {
-            _context.Set<Appointment>().Remove(appointment);
+            return await db.Appointments.AnyAsync(e => e.DoctorId == doctorId && e.Date == date && e.Time == time);
         }
     }
 }

@@ -27,7 +27,8 @@ public class MedicalContext : IdentityDbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        //modelBuilder.Entity<Record>().HasKey(e => new {e.PatientId, })
+        //modelbuilder.entity<record>().haskey(e => new { e.patientid, })
+
         modelBuilder.Entity<Appointment>()
             .HasOne(a => a.Patient)
             .WithMany(p => p.Appointments)
@@ -35,15 +36,15 @@ public class MedicalContext : IdentityDbContext
             .OnDelete(DeleteBehavior.Restrict); // Prevent cascading delete
 
         modelBuilder.Entity<Appointment>()
-            .HasOne(a => a.Provider)
+            .HasOne(a => a.Doctor)
             .WithMany(p => p.Appointments)
-            .HasForeignKey(a => a.ProviderId)
+            .HasForeignKey(a => a.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Appointment>()
-            .HasOne(a => a.Record)
-            .WithMany(p => p.Appointments)
-            .HasForeignKey(a => a.RecordId)
+        modelBuilder.Entity<Record>()
+            .HasOne(a => a.Provider)
+            .WithMany(p => p.Records)
+            .HasForeignKey(a => a.ProviderId)
             .OnDelete(DeleteBehavior.Restrict);
 
         #region Indexes
@@ -57,6 +58,9 @@ public class MedicalContext : IdentityDbContext
         .HasIndex(n => n.ReleaseDate);
         modelBuilder.Entity<Notification>()
         .HasIndex(n => new { n.ReleaseDate, n.IsSeen });
+        modelBuilder.Entity<Record>()
+            .HasIndex(e => new { e.PatientId, e.ProviderId })
+            .IsUnique();
         #endregion
 
         #region Seed Roles

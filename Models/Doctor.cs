@@ -22,4 +22,5 @@ public class Doctor : BaseEntity
     public required string ProviderId { get; set; }
 
     public virtual Provider? Provider { get; set; }
+    public virtual List<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

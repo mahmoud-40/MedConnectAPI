@@ -4,11 +4,9 @@ namespace Medical.DTOs.Account;
 public class ResetPasswordDTO
 {
     [Required(ErrorMessage = "Password required")]
-    // [RegularExpression("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*()[]{}<>~_-]).{6,}$", ErrorMessage = "Not Strong Password")]
     public string? Password { get; set; }
 
     [Required(ErrorMessage = "Password required")]
-    // [RegularExpression("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*()[]{}<>~_-]).{6,}$", ErrorMessage = "Not Strong Password")]
     [Compare("Password", ErrorMessage = "password not match")]
     public string? ConfirmPassword { get; set; }
 

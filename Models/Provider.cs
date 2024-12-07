@@ -14,6 +14,5 @@ public class Provider : AppUser
     public float Rate { get; set; }
 
     public virtual List<Doctor> Doctors { get; set; } = new List<Doctor>();
-    public virtual List<Appointment> Appointments { get; set; } = new List<Appointment>();
-
+    public virtual List<Record> Records { get; set; } = new List<Record>();
 }

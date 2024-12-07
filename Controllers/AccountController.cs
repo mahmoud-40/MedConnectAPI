@@ -35,7 +35,6 @@ public class AccountController : ControllerBase
         this.mapper = mapper;
     }
 
-    [HttpPost]
     [SwaggerOperation(Summary = "Register a new user and assigns them to a role", Description ="Registers a new user, sends an email confirmation link, and assigns the user to the appropriate role.\n\n" +
         "Note:\n" +
         "- UserType of  **Patient** is `1`.\n"+
@@ -45,10 +44,11 @@ public class AccountController : ControllerBase
          "- Shift of  **Morning** for Provider(Clinic) is `1`.\n" +
          "- Shift of  **Evening** for Provider(Clinic) is `2`.\n" +
          "- Shift of  **Night**  for Provider(Clinic) is `3`.\n\n" +
-        "https://localhost:7024/api/Account/Register")]
+        "`/api/Account/Register`")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [HttpPost("Register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO registerPatientDTO)
     {
         if (registerPatientDTO == null)
@@ -94,8 +94,6 @@ public class AccountController : ControllerBase
         await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
             $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
-        await unit.NotificationRepository.Add(user.Id, "Welcome to the Medical System");
-        await unit.NotificationRepository.Add(user.Id, "Please Confirm Your Email");
         await unit.Save();
 
         return Ok("User Registered and Please Confirm Your Email");
@@ -105,7 +103,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Authenticate a user and retrieve a JWT token",
         Description = "Logs in a user by validating their credentials and returns a JWT token if successful.\n\n" +
-            "https://localhost:7024/api/Account/Login"
+            "`/api/Account/Login`"
     )]
     [ProducesResponseType(typeof(AuthDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -147,6 +145,7 @@ public class AccountController : ControllerBase
             return BadRequest("Email confirmed Failed.");
         
         await unit.NotificationRepository.Add(user.Id, "Email Confirmed Successfully");
+        await unit.NotificationRepository.Add(user.Id, "Welcome to the Medical System");
         await unit.Save();
         return Ok("Email confirmed successfully.");
     }
@@ -155,7 +154,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Request a password reset link",
         Description = "Allows a user to request a password reset link. If the email is valid, a reset link is sent to the user's email address.\n\n" +
-            "https://localhost:7024/api/Account/ForgetPassword"
+            "`/api/Account/ForgetPassword`"
     )]
     [ProducesResponseType(typeof(ForgetPasswordDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -200,7 +199,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Reset the user's password",
         Description = "Allows a user to reset their password using a token received via email.\n\n"+
-            "https://localhost:7024/api/Account/ResetPassword"
+            "`/api/Account/ResetPassword`"
     )]
     [ProducesResponseType(typeof(ResetPasswordDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -230,7 +229,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Delete an Account",
         Description = "Deleta an Account Based on Id Need Admin Role" +
-            "https://localhost:7024/api/Account"
+            "`/api/Account`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -243,20 +242,20 @@ public class AccountController : ControllerBase
     {
         AppUser? user = usermanager.FindByIdAsync(id).Result;
         if (user == null)
-            return NotFound();
+            return NotFound(new { message = "User not found" });
 
         IdentityResult res = usermanager.DeleteAsync(user).Result;
 
         if (!res.Succeeded)
             return BadRequest(res.Errors);
 
-        return Ok();
+        return Ok(new { message = "User deleted successfully" });
     }
 
     [SwaggerOperation(
         Summary = "Delete Profile",
         Description = "Delete Profile Based on Login User" +
-            "https://localhost:7024/api/Account"
+            "`/api/Account`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -264,7 +263,7 @@ public class AccountController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize]
-    [HttpDelete("/profile")]
+    [HttpDelete("`/api/profile`")]
     public async Task<IActionResult> DeleteProfile()
     {
         if (User.Identity?.Name == null)
@@ -279,6 +278,6 @@ public class AccountController : ControllerBase
             return BadRequest(res.Errors);
         
         await signIn.SignOutAsync();
-        return Ok();
+        return Ok(new { message = "User deleted successfully" });
     }
 }

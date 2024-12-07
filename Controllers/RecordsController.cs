@@ -1,11 +1,14 @@
 ﻿using System.Reflection.Metadata;
+using AutoMapper;
 using Medical.Data.Interface;
-using Medical.DTOs.Patients;
+using Medical.DTOs.Doctors;
 using Medical.DTOs.Records;
 using Medical.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Medical.Controllers;
 
@@ -15,106 +18,47 @@ public class RecordsController : ControllerBase
 {
     UserManager<AppUser> _userManager;
     private IUnitOfWork _unit;
+    private readonly IMapper mapper;
 
-    public RecordsController(UserManager<AppUser> userManager, IUnitOfWork unit)
+    public RecordsController(UserManager<AppUser> userManager, IUnitOfWork unit, IMapper mapper)
     {
         _userManager = userManager;
         _unit = unit;
+        this.mapper = mapper;
     }
 
+    [SwaggerOperation(
+        Summary = "Add record",
+        Description = "Add record to patient, Requires Admin Role\n\n" +
+            "Example: `/api/records`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> AddRecord(AddRecordDTO _addRecordDto)
     {
-        if (ModelState.IsValid)
-        {
-            Record _record = new Record
-            {
-                PatientId = _addRecordDto.PatientId,
-                Treatments = _addRecordDto.Treatments,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                Appointments = new List<Appointment>
-                {
-                    new Appointment
-                    {
-                        PatientId = _addRecordDto.PatientId,
-                        ProviderId = _addRecordDto.ProviderId,
-                        Status = _addRecordDto.Status,
-                        Reason = _addRecordDto.Reason,
-                        Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                        Time = TimeOnly.FromDateTime(DateTime.UtcNow)
-                    }
-                }
-            };
-
-            await _unit.RecordRepository.Add(_record);
-
-            await _unit.Save();
-
-            return Ok( new { message = "Record added successfully" });
-        }
-        else
-        {
+        if (_addRecordDto == null)
+            return BadRequest(new { message = "Invalid record data" });
+        if (!ModelState.IsValid)
             return BadRequest(ModelState);
-        }
-    }
+        if (User.Identity?.Name == null)
+            return Unauthorized();
 
-    [HttpGet("{patient_id}/medical-records/{record_id}")]
-    public async Task<IActionResult> GetRecord(string patient_id, int record_id)
-    {
-        if (ModelState.IsValid)
-        {
-            var record = await _unit.RecordRepository.GetById(record_id);
+        Provider? provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (provider == null)
+            return NotFound(new { message = "Provider not found" });
 
-            if (record == null || record.PatientId != patient_id)
-            {
-                return NotFound(new { message = "Record not found" });
-            }
 
-            var displayRecord = new DisplayRecord
-            {
-                PatientName = record.Patient?.Name ?? "",
-                ProviderName = record.Appointments[0].Provider?.Name ?? "",
-                Treatments = record.Treatments,
-                Time = record.Appointments[0].Time,
-                Date = record.Appointments[0].Date,
-                Status = record.Appointments[0].Status,
-                Reason = record.Appointments[0].Reason
-            };
+        Record _record = mapper.Map<Record>(_addRecordDto);
 
-            return Ok(displayRecord);
-        }
-        else
-        {
-            return BadRequest(ModelState);
-        }
-    }
+        await _unit.RecordRepository.Add(_record);
+        await _unit.NotificationRepository.Add(provider.Id, $"New medical record added for patient {_record.PatientId}");
+        await _unit.NotificationRepository.Add(_record.PatientId, "New medical record added \n\n" +
+                                                            $"In {provider.Name} at {DateTime.UtcNow}" +
+                                                            $"Your record ID is {_record.Id}");
+        await _unit.Save();
 
-    [HttpPut("{patient_id}/medical-records/{record_id}")]
-    public async Task<IActionResult> UpdateRecord(UpdateRecordDTO _updateRecordDto)
-    {
-        if (ModelState.IsValid)
-        {
-            var record = await _unit.RecordRepository.GetById(_updateRecordDto.RecordId);
-
-            if (record == null || record.PatientId != _updateRecordDto.PatientId)
-            {
-                return NotFound(new { message = "Record not found" });
-            }
-
-            record.Treatments = _updateRecordDto.Treatments;
-            record.Appointments[0].Status = _updateRecordDto.Status;
-            record.Appointments[0].Reason = _updateRecordDto.Reason;
-            record.UpdatedAt = DateTime.UtcNow;
-
-            await _unit.RecordRepository.Update(record);
-            await _unit.Save();
-
-            return Ok(new { message = "Record updated successfully" });
-        }
-        else
-        {
-            return BadRequest(ModelState);
-        }
+        return Ok( new { message = "Record added successfully" });
     }
 }
