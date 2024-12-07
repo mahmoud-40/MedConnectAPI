@@ -28,11 +28,11 @@ public class NotificationController : ControllerBase
 
     [SwaggerOperation(
         Summary = "Get all notifications",
-        Description = "Get all notifications for the current user\n" +
-            "Query parameters: _from (DateTime), _to (DateTime)\n" +
-            "_from (optional): get notifications from this date default -> Last 7 Days\n" +
-            "_to (optional): get notifications to this date default -> Today" +
-            "example: /api/notification?_from=2024-12-01&_to=2024-12-10"
+        Description = "Get all notifications for the current user\n\n" +
+            "Query parameters: _from (DateTime), _to (DateTime)\n\n" +
+            "_from (optional): get notifications from this date default -> Last `7` Days\n\n" +
+            "_to (optional): get notifications to this date default -> Today\n\n" +
+            "example: `/api/notification?_from=2024-12-01&_to=2024-12-10`"
     )]
     [ProducesResponseType(typeof(List<ViewNotificationDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -58,8 +58,8 @@ public class NotificationController : ControllerBase
 
     [SwaggerOperation(
         Summary = "Get new notifications",
-        Description = "Get new notifications for the current user" +
-            "example: /api/notification/new"
+        Description = "Get new notifications for the current user\n\n" +
+            "example: `/api/notification/new`"
     )]
     [ProducesResponseType(typeof(List<ViewNotificationDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -86,8 +86,8 @@ public class NotificationController : ControllerBase
 
     [SwaggerOperation(
         Summary = "Get notification by id",
-        Description = "Get notification by id required Admin role" +
-            "example: /api/notification/1"
+        Description = "Get notification by id required `Admin` role\n\n" +
+            "example: `/api/notification/1`"
     )]
     [ProducesResponseType(typeof(ViewNotificationDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -116,8 +116,8 @@ public class NotificationController : ControllerBase
 
     [SwaggerOperation(
         Summary = "Sent notification",
-        Description = "Sent notification to the user required Admin role" +
-            "example: /api/notification/sent"
+        Description = "Sent notification to the user required `Admin` role\n\n" +
+            "example: `/api/notification/sent`"
     )]
     [ProducesResponseType(typeof(ViewNotificationDTO), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

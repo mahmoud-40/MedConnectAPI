@@ -35,7 +35,6 @@ public class AccountController : ControllerBase
         this.mapper = mapper;
     }
 
-    [HttpPost("Register")]
     [SwaggerOperation(Summary = "Register a new user and assigns them to a role", Description ="Registers a new user, sends an email confirmation link, and assigns the user to the appropriate role.\n\n" +
         "Note:\n" +
         "- UserType of  **Patient** is `1`.\n"+
@@ -45,11 +44,11 @@ public class AccountController : ControllerBase
          "- Shift of  **Morning** for Provider(Clinic) is `1`.\n" +
          "- Shift of  **Evening** for Provider(Clinic) is `2`.\n" +
          "- Shift of  **Night**  for Provider(Clinic) is `3`.\n\n" +
-        "/api/Account/Register")]
+        "`/api/Account/Register`")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
-    [Route("Register")]
+    [HttpPost("Register")]
     public async Task<IActionResult> Register([FromBody] RegisterDTO registerPatientDTO)
     {
         if (registerPatientDTO == null)
@@ -104,7 +103,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Authenticate a user and retrieve a JWT token",
         Description = "Logs in a user by validating their credentials and returns a JWT token if successful.\n\n" +
-            "/api/Account/Login"
+            "`/api/Account/Login`"
     )]
     [ProducesResponseType(typeof(AuthDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -155,7 +154,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Request a password reset link",
         Description = "Allows a user to request a password reset link. If the email is valid, a reset link is sent to the user's email address.\n\n" +
-            "/api/Account/ForgetPassword"
+            "`/api/Account/ForgetPassword`"
     )]
     [ProducesResponseType(typeof(ForgetPasswordDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -200,7 +199,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Reset the user's password",
         Description = "Allows a user to reset their password using a token received via email.\n\n"+
-            "/api/Account/ResetPassword"
+            "`/api/Account/ResetPassword`"
     )]
     [ProducesResponseType(typeof(ResetPasswordDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -230,7 +229,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Delete an Account",
         Description = "Deleta an Account Based on Id Need Admin Role" +
-            "/api/Account"
+            "`/api/Account`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -256,7 +255,7 @@ public class AccountController : ControllerBase
     [SwaggerOperation(
         Summary = "Delete Profile",
         Description = "Delete Profile Based on Login User" +
-            "/api/Account"
+            "`/api/Account`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -264,7 +263,7 @@ public class AccountController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize]
-    [HttpDelete("/api/profile")]
+    [HttpDelete("`/api/profile`")]
     public async Task<IActionResult> DeleteProfile()
     {
         if (User.Identity?.Name == null)
