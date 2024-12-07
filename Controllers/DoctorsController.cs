@@ -26,8 +26,8 @@ public class DoctorsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Get all doctors",
-        description: "Add doctor to provider, Requires Admin Role\n" +
-            "Example: /api/doctors"
+        description: "Add doctor to provider, Requires Admin Role\n\n" +
+            "Example: `/api/doctors`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
@@ -36,14 +36,14 @@ public class DoctorsController : ControllerBase
     public async Task<IActionResult> GetDoctors()
     {
         var doctors = await unit.DoctorRepository.GetAll();
-        var views = mapper.Map<List<ViewDoctorDTO>>(doctors);
+        List<ViewDoctorDTO> views = mapper.Map<List<ViewDoctorDTO>>(doctors);
         return Ok(views);
     }
 
     [SwaggerOperation(
         summary: "Get doctor by id",
-        description: "Get doctor by id, Requires Admin Role\n" +
-            "Example: /api/doctors/1"
+        description: "Get doctor by id, Requires Admin Role\n\n" +
+            "Example: `/api/doctors/1`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -56,14 +56,14 @@ public class DoctorsController : ControllerBase
         if (doctor == null)
             return NotFound(new { message = "Doctor not found" });
 
-        var view = mapper.Map<ViewDoctorDTO>(doctor);
+        ViewDoctorDTO? view = mapper.Map<ViewDoctorDTO>(doctor);
         return Ok(view);
     }
 
     [SwaggerOperation(
         summary: "Edit doctor data",
-        description: "Edit doctor data in provider, Requires Admin Role\n" +
-            "Example: /api/doctors/1"
+        description: "Edit doctor data in provider, Requires Admin Role\n\n" +
+            "Example: `/api/doctors/1`"
     )]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -100,6 +100,7 @@ public class DoctorsController : ControllerBase
 
         mapper.Map(doctorDTO, doctor);
         await unit.DoctorRepository.Update(doctor);
+        await unit.NotificationRepository.Add(doctor.ProviderId, $"Doctor {doctor.FullName} data updated");
         await unit.Save();
 
         return NoContent();
@@ -107,8 +108,8 @@ public class DoctorsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Delete doctor",
-        description: "Delete doctor, Requires Admin Role\n" +
-            "Example: /api/doctors/1"
+        description: "Delete doctor, Requires Admin Role\n\n" +
+            "Example: `/api/doctors/1`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -124,6 +125,7 @@ public class DoctorsController : ControllerBase
             return NotFound(new { message = "Doctor not found" });
 
         await unit.DoctorRepository.Delete(doctor);
+        await unit.NotificationRepository.Add(doctor.ProviderId, $"Doctor {doctor.FullName} deleted");
         await unit.Save();
 
         return Ok(new { message = "Doctor deleted successfully" });
@@ -131,8 +133,8 @@ public class DoctorsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Change doctor provider",
-        description: "Change doctor provider, Requires Admin Role\n" +
-            "Example: /api/doctors/1/provider/2"
+        description: "Change doctor provider, Requires Admin Role\n\n" +
+            "Example: `/api/doctors/1/provider/2`"
     )]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -150,8 +152,11 @@ public class DoctorsController : ControllerBase
         if (provider == null)
             return NotFound(new { message = "Provider not found" });
 
+        string prevProvider = doctor.ProviderId;
         doctor.ProviderId = provider.Id;
         await unit.DoctorRepository.Update(doctor);
+        await unit.NotificationRepository.Add(provider.Id, $"Doctor {doctor.FullName} assigned to you");
+        await unit.NotificationRepository.Add(prevProvider, $"Doctor {doctor.FullName} removed from you");
         await unit.Save();
 
         return NoContent();

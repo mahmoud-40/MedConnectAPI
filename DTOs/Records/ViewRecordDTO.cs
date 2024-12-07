@@ -9,5 +9,5 @@ public class ViewRecordDTO
     public TimeSpan LastUpdate { get; set; }
     public TimeSpan Since { get; set; }
 
-    public List<AppointmentDetailsDTO> Appointments { get; set; } = new List<AppointmentDetailsDTO>();
+    public List<AppointmentDetailsDTO> Appointments { get; set; } = new List<AppointmentDetailsDTO>(); //need update
 }

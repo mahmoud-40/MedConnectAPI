@@ -28,10 +28,11 @@ public class PatientsController : ControllerBase
         this.mapper = mapper;
     }
 
+    #region Get Patients
     [SwaggerOperation(
         summary: "Get all patients",
-        description: "Get all patients\n" +
-            "Example: /api/patients"
+        description: "Get all patients\n\n" +
+            "Example: `/api/patients`"
     )]
     [ProducesResponseType(typeof(List<ViewPatientDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -48,8 +49,8 @@ public class PatientsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Get patient by id",
-        description: "Get patient by id\n" +
-            "Example: /api/patients/1"
+        description: "Get patient by id\n\n" +
+            "Example: `/api/patients/1`"
     )]
     [ProducesResponseType(typeof(ViewPatientDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -69,8 +70,8 @@ public class PatientsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Get patient profile",
-        description: "Get patient profile, Requires Patient Role\n" +
-            "Example: /api/patients/profile"
+        description: "Get patient profile, Requires Patient Role\n\n" +
+            "Example: `/api/patients/profile`"
     )]
     [ProducesResponseType(typeof(ViewPatientDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -91,11 +92,13 @@ public class PatientsController : ControllerBase
 
         return Ok(patientDTO);
     }
+    #endregion
 
+    #region Edit Profile
     [SwaggerOperation(
         summary: "Edit patient profile",
-        description: "Edit patient profile, Requires Patient Role\n" +
-            "Example: /api/patients/profile"
+        description: "Edit patient profile, Requires Patient Role\n\n" +
+            "Example: `/api/patients/profile`"
     )]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -127,15 +130,18 @@ public class PatientsController : ControllerBase
             return BadRequest(res.Errors);
 
         await unit.NotificationRepository.Add(patient.Id, "Your profile has been updated.");
+        await unit.Save();
         return NoContent();
     }
+    #endregion
 
+    #region Manage Medical Records
     [SwaggerOperation(
         summary: "Get medical records",
-        description: "Get medical records of a patient, Requires Patient Role\n" +
-            "Query parameters: doctorId or providerId\n" +
-            "You can only use one of the query parameters\n" +
-            "Example: /api/patients/medical-records?doctorId=1"
+        description: "Get medical records of a patient, Requires Patient Role\n\n" +
+            "Query parameters: doctorId or providerId\n\n" +
+            "You can only use one of the query parameters\n\n" +
+            "Example: `/api/patients/medical-records?doctorId=1`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -157,41 +163,14 @@ public class PatientsController : ControllerBase
             return NotFound(new { message = "Patient not found" });
 
         return await GetMedicalRecordsGerneral(patient.Id, doctorId, providerId);
-
-        // Doctor? doctor = await unit.DoctorRepository.GetById(doctorId ?? -1);
-        // if (doctorId != null && doctor == null)
-        //     return NotFound(new { message = "Doctor not found" });
-        // Provider? provider = null;
-        // if (providerId == null)
-        //     provider = await userManager.FindByIdAsync(doctor?.ProviderId ?? "-1") as Provider;
-        // else
-        //     provider = await userManager.FindByIdAsync(providerId) as Provider;
-
-        // if (providerId != null && provider == null)
-        //     return NotFound(new { message = "Provider not found" });
-
-        // if (provider is not null)
-        // {
-        //     Record? record = await unit.RecordRepository.Get(patient.Id, provider.Id);
-        //     if (record is null)
-        //         return NotFound(new { message = "Record not found" });
-        //     DisplayRecord recordDTO = mapper.Map<DisplayRecord>(record);
-        //     return Ok(recordDTO);
-        // }
-        // else
-        // {
-        //     List<Record> records = (await unit.RecordRepository.GetByPatientId(patient.Id)).ToList();
-        //     List<DisplayRecord> recordsDTO = mapper.Map<List<DisplayRecord>>(records);
-        //     return Ok(recordsDTO);
-        // }
     }
 
     [SwaggerOperation(
         summary: "Get medical records",
-        description: "Get medical records of a patient, Requires Admin Role\n" +
-            "Query parameters: doctorId or providerId\n" +
-            "You can only use one of the query parameters\n" +
-            "Example: /api/patients/1/medical-records?doctorId=1"
+        description: "Get medical records of a patient, Requires Admin Role\n\n" +
+            "Query parameters: doctorId or providerId\n\n" +
+            "You can only use one of the query parameters\n\n" +
+            "Example: `/api/patients/1/medical-records?doctorId=1`"
     )]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -238,8 +217,18 @@ public class PatientsController : ControllerBase
         }
     }
 
+    [SwaggerOperation(
+        summary: "Add medical record",
+        description: "Add medical record to a patient in current Provider, Requires Provider Role\n\n" +
+            "Example: `/api/patients/1/medical-records`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
-    [HttpPost("{id}/medical-records")]
+    [HttpPost("{patient_id}/medical-records")]
     public async Task<IActionResult> AddRecord(string patient_id, AddRecordByProviderDTO recordDTO)
     {
         if (recordDTO == null)
@@ -258,11 +247,24 @@ public class PatientsController : ControllerBase
         record.PatientId = patient_id;
 
         await unit.RecordRepository.Add(record);
+        await unit.NotificationRepository.Add(patient_id, "New medical record added to your profile\n\n" +
+                                                            $"In {provider.Name} at {DateTime.UtcNow}" +
+                                                            $"Your record ID is {record.Id}");
         await unit.Save();
 
         return Ok(new { message = "Record added successfully" });
     }
 
+    [SwaggerOperation(
+        summary: "Edit medical record",
+        description: "Edit medical record of a patient in current Provider, Requires Provider Role\n\n" +
+            "Example: `/api/patients/1/medical-records/1`"
+    )]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
     [HttpPut("{patient_id}/medical-records/{record_id}")]
     public async Task<IActionResult> EditRecord(string patient_id, int record_id, UpdateRecordByProviderDTO recordDTO)
@@ -283,12 +285,25 @@ public class PatientsController : ControllerBase
             return NotFound(new { message = "Record not found" });
 
         mapper.Map(recordDTO, record);
+        record.UpdatedAt = DateTime.UtcNow;
         await unit.RecordRepository.Update(record);
+        await unit.NotificationRepository.Add(patient_id, $"Your medical record in {provider.Name} has been updated" +
+                                                            $" at {DateTime.UtcNow}" +
+                                                            $"Your record ID is {record.Id}");
         await unit.Save();
 
         return NoContent();
     }
 
+    [SwaggerOperation(
+        summary: "Delete medical record",
+        description: "Delete medical record of a patient in current Provider, Requires Provider Role\n\n" +
+            "Example: `/api/patients/1/medical-records/1`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize (Roles = "Provider")]
     [HttpDelete("{patient_id}/medical-records/{record_id}")]
     public async Task<IActionResult> DeleteRecord(string patient_id, int record_id)
@@ -305,10 +320,14 @@ public class PatientsController : ControllerBase
             return NotFound(new { message = "Record not found" });
 
         await unit.RecordRepository.Delete(record);
+        await unit.NotificationRepository.Add(patient_id, $"Your medical record in {provider.Name} has been deleted" +
+                                                            $" at {DateTime.UtcNow}" +
+                                                            $"Your record ID is {record.Id}");
         await unit.Save();
 
         return Ok(new { message = "Record deleted successfully" });
     }
+    #endregion
 
     //[Authorize(Roles = "Admin")]
     //[HttpGet("{id}/appointments")]
