@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using Medical.Data.Interface;
+using Medical.DTOs.Appointments;
 using Medical.DTOs.Doctors;
+using Medical.DTOs.Patients;
 using Medical.DTOs.Providers;
 using Medical.DTOs.Records;
 using Medical.Models;
@@ -312,72 +314,64 @@ public class ProvidersController : ControllerBase
     #endregion
 
     #region Scheduling
-    // [Authorize(Roles = "Admin")]
-    // [HttpGet("{id}/schedule")]
-    // public async Task<IActionResult> GetProviderSchedule(string id)
-    // {
-    //     Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
-    //     if (_provider == null)
-    //         return NotFound(new { message = "Provider not found" });
+    [SwaggerOperation(
+        summary: "Get Provider Schedule",
+        description: "Get Provider Schedule, Requires Admin Role\n\n" +
+            "Example: `/api/providers/1/schedule`"
+    )]
+    [ProducesResponseType(typeof(List<ScheduleDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Admin")]
+    [HttpGet("{id}/schedule")]
+    public async Task<IActionResult> GetProviderSchedule(string id, [FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null)
+    {
+        from ??= DateOnly.FromDateTime(DateTime.Today);
+        to ??= from.Value.AddDays(7);
 
-    //     var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
+        Provider? _provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
 
-    //     List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
+        List<Appointment> appointments = await _unit.AppointmentRepository.GetByProviderId(_provider.Id);
 
-    //     foreach (var appointment in _providerAppointments)
-    //     {
-    //         var patientId = appointment.PatientId;
-    //         DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
-    //         {
+        List<ScheduleDTO> schedules = new List<ScheduleDTO>();
+        for (var day = from.Value; day <= to.Value; day = day.AddDays(1))
+        {
+            ScheduleDTO schedule = new ScheduleDTO
+            {
+                Day = day,
+                Appointments = appointments.Where(a => a.Date == day).Select(a => mapper.Map<ViewAppointmentDTO>(a)).ToList()
+            };
+            schedules.Add(schedule);
+        }
 
-    //             PatientId = patientId,
-    //             PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
-    //             Status = appointment.Status,
-    //             Reason = appointment.Reason,
-    //             Date = appointment.Date,
-    //             Time = appointment.Time,
-    //         };
+        return Ok(schedules);
+    }
 
-    //         _providerScheduleDto.Add(_displayProviderSceduleDto);
-    //     }
-
-    //     return Ok(_providerScheduleDto);
-    // }
-
-    // [Authorize (Roles = "Provider")]
-    // [HttpGet("schedule")]
-    // public async Task<IActionResult> GetProviderSchedule()
-    // {
-    //     if (User.Identity?.Name == null)
-    //         return Unauthorized();
+    [SwaggerOperation(
+        summary: "Get Provider Schedule",
+        description: "Get Provider Schedule who log in, Requires Provider Role\n\n" +
+            "Example: `/api/providers/schedule`"
+    )]
+    [ProducesResponseType(typeof(List<ScheduleDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize (Roles = "Provider")]
+    [HttpGet("schedule")]
+    public async Task<IActionResult> GetProviderSchedule([FromQuery] DateOnly? from = null, [FromQuery] DateOnly? to = null)
+    {
+        if (User.Identity?.Name == null)
+            return Unauthorized();
         
-    //     Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
-    //     if (_provider == null)
-    //         return NotFound(new { message = "Provider not found" });
+        Provider? _provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (_provider == null)
+            return NotFound(new { message = "Provider not found" });
 
-    //     var _providerAppointments = await _unit.AppointmentRepository.GetAppointmentsByProviderId(_provider.Id);
-
-    //     List<DisplayProviderSceduleDTO> _providerScheduleDto = new List<DisplayProviderSceduleDTO>();
-
-    //     foreach (var appointment in _providerAppointments)
-    //     {
-    //         var patientId = appointment.PatientId;
-    //         DisplayProviderSceduleDTO _displayProviderSceduleDto = new DisplayProviderSceduleDTO
-    //         {
-
-    //             PatientId = patientId,
-    //             PatientName = _unit.PatientRepository.GetById(patientId).Result?.Name,
-    //             Status = appointment.Status,
-    //             Reason = appointment.Reason,
-    //             Date = appointment.Date,
-    //             Time = appointment.Time,
-    //         };
-
-    //         _providerScheduleDto.Add(_displayProviderSceduleDto);
-    //     }
-
-    //     return Ok(_providerScheduleDto);
-    // }
+        return await GetProviderSchedule(_provider.Id, from, to);
+    }
     #endregion
 
     #region Get Records By Provider
