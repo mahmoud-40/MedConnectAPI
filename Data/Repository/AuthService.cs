@@ -34,7 +34,7 @@ public class AuthService : IAuthService
 
         List<Claim>? claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.NameIdentifier,user.Id),
             new Claim(ClaimTypes.Name,user.UserName ?? ""),
         };
         var roles = await userManager.GetRolesAsync(user);
