@@ -6,6 +6,7 @@ using Medical.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace Medical.Controllers;
 
@@ -124,6 +125,17 @@ public class AppointmentsController : ControllerBase
         return Ok(new { message = "Appointment canceled successfully" });
     }
 
+    [SwaggerOperation(
+        Summary = "Confirm appointment",
+        Description = "Confirm appointment by provider Requires Provider role\n\n" +
+                      "Status: Waiting -> Confirmed\n\n" +
+                      "Example: PUT `/api/appointments/1/confirm`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
     [HttpPut("{id}/confirm")]
     public async Task<IActionResult> ConfirmAppointment(int id)
@@ -131,6 +143,15 @@ public class AppointmentsController : ControllerBase
         var appointment = await _unit.AppointmentRepository.GetById(id);
         if (appointment == null)
             return NotFound(new { message = "Appointment not found" });
+
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+        
+        Provider? provider = await userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (provider == null)
+            return NotFound(new { message = "Provider not found" });
+        if (appointment.Doctor?.ProviderId != provider.Id)
+            return Unauthorized(new { message = "You are not authorized to manage this appointment" });
 
         if (appointment.Status != Status.Waiting)
             return BadRequest(new { message = "This appointment is not in the waiting list" });
@@ -140,7 +161,14 @@ public class AppointmentsController : ControllerBase
         await _unit.AppointmentRepository.Update(appointment);
         await _unit.Save();
 
-        await _unit.NotificationRepository.Add(appointment.PatientId, "Your appointment has been confirmed");
+        await _unit.NotificationRepository.Add(appointment.PatientId, $"Your appointment({appointment.Id}) At ({appointment.Doctor?.Provider?.Name}) has been confirmed" +
+                                                                        $"Date: {appointment.Date} Time: {appointment.Time}" +
+                                                                        $"Doctor: {appointment.Doctor?.FullName}");
+        
+        //Sent Reminder to patient before 1 day of appointment
+        await _unit.NotificationRepository.Add(appointment.PatientId, $"Reminder: Your appointment({appointment.Id}) At ({appointment.Doctor?.Provider?.Name}) is tomorrow" +
+                                                $"Date: {appointment.Date} Time: {appointment.Time}" +
+                                                $"Doctor: {appointment.Doctor?.FullName}", appointment.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1).AddHours(10));
         await _unit.Save();
 
         return Ok(new { message = "Appointment confirmed successfully" });
