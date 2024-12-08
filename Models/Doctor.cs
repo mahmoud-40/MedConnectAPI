@@ -7,7 +7,7 @@ public class Doctor : BaseEntity
 {
     [Required]
     [StringLength(256)]
-    public string? FullName { get; set; }
+    public required string FullName { get; set; }
 
     [StringLength(256)]
     public string? Title { get; set; }
@@ -22,4 +22,5 @@ public class Doctor : BaseEntity
     public required string ProviderId { get; set; }
 
     public virtual Provider? Provider { get; set; }
+    public virtual List<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

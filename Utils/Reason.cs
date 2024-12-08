@@ -2,5 +2,7 @@
 
 public enum Reason
 {
-    Routine_check_up,
+    Checkup,
+    Reexamine,
+    Routine_Checkup,
 }

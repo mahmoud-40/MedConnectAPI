@@ -4,5 +4,7 @@ public enum Status
 {
     Confirmed,
     Waiting,
-    Canceled
+    Canceled,
+    Rescheduled,
+    Updated
 }

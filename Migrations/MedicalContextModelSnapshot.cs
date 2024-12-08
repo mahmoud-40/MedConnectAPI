@@ -39,33 +39,27 @@ namespace Medical.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<string>("PatientId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("ProviderId")
+                    b.Property<string>("PatientId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Reason")
                         .HasColumnType("int");
 
-                    b.Property<int>("RecordId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<TimeOnly>("Time")
-                        .HasColumnType("time");
+                    b.Property<int>("Time")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DoctorId");
+
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("ProviderId");
-
-                    b.HasIndex("RecordId");
 
                     b.ToTable("Appointments");
                 });
@@ -115,9 +109,6 @@ namespace Medical.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AppointmentId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -127,9 +118,20 @@ namespace Medical.Migrations
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("ReleaseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId");
+                    b.HasIndex("ReleaseDate");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ReleaseDate", "IsSeen");
 
                     b.ToTable("Notifications");
                 });
@@ -149,6 +151,10 @@ namespace Medical.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ProviderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Treatments")
                         .HasColumnType("nvarchar(max)");
 
@@ -158,6 +164,8 @@ namespace Medical.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("ProviderId");
 
                     b.ToTable("Records");
                 });
@@ -191,21 +199,21 @@ namespace Medical.Migrations
                     b.HasData(
                         new
                         {
-                            Id = "ed4dea11-f969-4524-a207-c1a14a488c8f",
-                            Name = "Patient",
-                            NormalizedName = "PATIENT"
+                            Id = "0",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = "590fc0b2-ecda-40ff-8537-f790d227209f",
+                            Id = "1",
                             Name = "Provider",
                             NormalizedName = "PROVIDER"
                         },
                         new
                         {
-                            Id = "6dbe495f-26b5-486e-8142-90cdc17f9a82",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
+                            Id = "2",
+                            Name = "Patient",
+                            NormalizedName = "PATIENT"
                         });
                 });
 
@@ -368,6 +376,33 @@ namespace Medical.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetUserRoles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = "d3baf159-76f6-4845-92e0-fd966b450d15",
+                            RoleId = "0"
+                        },
+                        new
+                        {
+                            UserId = "391d21c6-5c2e-4133-8387-723634eb46e0",
+                            RoleId = "0"
+                        },
+                        new
+                        {
+                            UserId = "24586763-9356-4dbf-b912-d536e5d34250",
+                            RoleId = "0"
+                        },
+                        new
+                        {
+                            UserId = "c67e1c2c-34ec-4a2c-b9bb-41bd9bcfd1fd",
+                            RoleId = "0"
+                        },
+                        new
+                        {
+                            UserId = "83c1967d-f3a7-49f2-8ba6-19bee5cc1723",
+                            RoleId = "0"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -396,7 +431,119 @@ namespace Medical.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[Email] IS NOT NULL");
+
+                    b.HasIndex("UserName")
+                        .IsUnique()
+                        .HasFilter("[UserName] IS NOT NULL");
+
                     b.HasDiscriminator().HasValue("AppUser");
+                });
+
+            modelBuilder.Entity("Medical.Models.Admin", b =>
+                {
+                    b.HasBaseType("Medical.Models.AppUser");
+
+                    b.HasDiscriminator().HasValue("Admin");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "d3baf159-76f6-4845-92e0-fd966b450d15",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "105bc2e9-4428-44a7-bf14-7c5fe50f7e36",
+                            Email = "admin@joo.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@JOO.COM",
+                            NormalizedUserName = "ADMIN",
+                            PasswordHash = "AQAAAAIAAYagAAAAEAjzR/Kq3He66Z9xJoVvIulYdIhdIgfkwRfEZm7iFhQaLtZc1SIy1wzWJBgRkNGScg==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "181af9be-180f-42e4-8a15-7fc2611cdc4b",
+                            TwoFactorEnabled = false,
+                            UserName = "admin",
+                            CreatedAt = new DateTime(2024, 12, 5, 22, 58, 9, 776, DateTimeKind.Utc).AddTicks(4293),
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = "391d21c6-5c2e-4133-8387-723634eb46e0",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "322a943f-d41c-4a6e-b6d8-427790354bf0",
+                            Email = "yuossefbakier@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "YUOSSEFBAKIER@GMAIL.COM",
+                            NormalizedUserName = "YOUSEF",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBuzONAcPZwET0zeGExRnVsS+JBDLvBpp8QOEJREVCRBBjFrNCtM7rSAPljJqAKW1w==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "fed395f2-be8a-4dd5-9378-e14cfc41d807",
+                            TwoFactorEnabled = false,
+                            UserName = "Yousef",
+                            CreatedAt = new DateTime(2024, 12, 5, 22, 58, 9, 823, DateTimeKind.Utc).AddTicks(5173),
+                            Name = "Yousef Ahmed"
+                        },
+                        new
+                        {
+                            Id = "24586763-9356-4dbf-b912-d536e5d34250",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "620e2c90-394c-4894-9e70-c57d4f29b65a",
+                            Email = "gamalelbatawy@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "GAMALELBATAWY@GMAIL.COM",
+                            NormalizedUserName = "GAMAL",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIJ8jBMDDiuLBhqNpgD95Brk/RfpbP0YnhB3xBYdU3DXcD1+KW+racTe1IQoJ/n3FQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "edeb3bde-e4a1-4c50-8403-f4c74009636e",
+                            TwoFactorEnabled = false,
+                            UserName = "Gamal",
+                            CreatedAt = new DateTime(2024, 12, 5, 22, 58, 9, 868, DateTimeKind.Utc).AddTicks(3342),
+                            Name = "Gamal Moemen"
+                        },
+                        new
+                        {
+                            Id = "c67e1c2c-34ec-4a2c-b9bb-41bd9bcfd1fd",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "1f22ab2b-a706-4bb1-8f04-1d2484c22406",
+                            Email = "m.elbaadishy@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "M.ELBAADISHY@GMAIL.COM",
+                            NormalizedUserName = "B3DSH",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIxXaTj0vL+nFdrnZ6eFMq5ovrod2Np589KSyMPGQXiz2DCY0XZni5SitHNNIJDmsQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "a13e6426-92da-40cd-a19c-fe387ad8c792",
+                            TwoFactorEnabled = false,
+                            UserName = "b3dsh",
+                            CreatedAt = new DateTime(2024, 12, 5, 22, 58, 9, 914, DateTimeKind.Utc).AddTicks(3362),
+                            Name = "Mahmoud Abdulmawlaa"
+                        },
+                        new
+                        {
+                            Id = "83c1967d-f3a7-49f2-8ba6-19bee5cc1723",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "f59c8891-5d8a-4070-b2ad-2ca4ffa05b8c",
+                            Email = "reemfadaly.23@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "REEMFADALY.23@GMAIL.COM",
+                            NormalizedUserName = "REEM",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKy7C1agc+OBcDnpoalsIDUXooEdScPqTntypcxsJC12LgVlFWzSOMXYn1ibCsak8w==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "b2edf6fc-e887-4f2b-975a-38f203474f23",
+                            TwoFactorEnabled = false,
+                            UserName = "reem",
+                            CreatedAt = new DateTime(2024, 12, 5, 22, 58, 9, 959, DateTimeKind.Utc).AddTicks(4770),
+                            Name = "Reem Fadaly"
+                        });
                 });
 
             modelBuilder.Entity("Medical.Models.Patient", b =>
@@ -406,8 +553,8 @@ namespace Medical.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Age")
-                        .HasColumnType("int");
+                    b.Property<DateOnly>("BirthDay")
+                        .HasColumnType("date");
 
                     b.Property<int>("Gender")
                         .HasColumnType("int");
@@ -433,29 +580,21 @@ namespace Medical.Migrations
 
             modelBuilder.Entity("Medical.Models.Appointment", b =>
                 {
+                    b.HasOne("Medical.Models.Doctor", "Doctor")
+                        .WithMany("Appointments")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Medical.Models.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Medical.Models.Provider", "Provider")
-                        .WithMany("Appointments")
-                        .HasForeignKey("ProviderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Medical.Models.Record", "Record")
-                        .WithMany("Appointments")
-                        .HasForeignKey("RecordId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("Provider");
-
-                    b.Navigation("Record");
                 });
 
             modelBuilder.Entity("Medical.Models.Doctor", b =>
@@ -471,13 +610,13 @@ namespace Medical.Migrations
 
             modelBuilder.Entity("Medical.Models.Notification", b =>
                 {
-                    b.HasOne("Medical.Models.Appointment", "Appointment")
+                    b.HasOne("Medical.Models.AppUser", "User")
                         .WithMany("Notification")
-                        .HasForeignKey("AppointmentId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Appointment");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Medical.Models.Record", b =>
@@ -488,7 +627,15 @@ namespace Medical.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Medical.Models.Provider", "Provider")
+                        .WithMany("Records")
+                        .HasForeignKey("ProviderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Patient");
+
+                    b.Navigation("Provider");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -542,14 +689,14 @@ namespace Medical.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Medical.Models.Appointment", b =>
-                {
-                    b.Navigation("Notification");
-                });
-
-            modelBuilder.Entity("Medical.Models.Record", b =>
+            modelBuilder.Entity("Medical.Models.Doctor", b =>
                 {
                     b.Navigation("Appointments");
+                });
+
+            modelBuilder.Entity("Medical.Models.AppUser", b =>
+                {
+                    b.Navigation("Notification");
                 });
 
             modelBuilder.Entity("Medical.Models.Patient", b =>
@@ -561,9 +708,9 @@ namespace Medical.Migrations
 
             modelBuilder.Entity("Medical.Models.Provider", b =>
                 {
-                    b.Navigation("Appointments");
-
                     b.Navigation("Doctors");
+
+                    b.Navigation("Records");
                 });
 #pragma warning restore 612, 618
         }

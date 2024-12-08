@@ -9,21 +9,20 @@ public class Appointment : BaseEntity
     [Required]
     public DateOnly Date { get; set; }
 
-    [Column(TypeName = "time")]
     [Required]
-    public TimeOnly Time { get; set; }
+    [Range(0, 24)]
+    public int Time { get; set; }
 
     public Status Status { get; set; } = Status.Waiting;
 
-    public Reason Reason { get; set; }
+    public Reason Reason { get; set; } //كشف او اعاده
 
     public required string PatientId { get; set; }
-    public required string ProviderId { get; set; }
-    public int RecordId { get; set; }
+    // public required string ProviderId { get; set; } //TODO: Make Relation with doctor
+    public required int DoctorId { get; set; }
+    //public int RecordId { get; set; }
 
     public virtual Patient? Patient { get; set; }
-    public virtual Provider? Provider { get; set; }
-    public virtual Record? Record { get; set; }
-
-    public virtual List<Notification> Notification { get; set; } = new List<Notification>();
+    public virtual Doctor? Doctor { get; set; }
+    //public virtual Record? Record { get; set; }
 }
