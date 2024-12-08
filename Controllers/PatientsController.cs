@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Medical.Data.Interface;
+using Medical.DTOs.Appointments;
 using Medical.DTOs.Patients;
 using Medical.DTOs.Records;
 using Medical.Models;
@@ -329,14 +330,52 @@ public class PatientsController : ControllerBase
     }
     #endregion
 
-    //[Authorize(Roles = "Admin")]
-    //[HttpGet("{id}/appointments")]
-    //public IActionResult GetAppointmentsGeneral(int id)
-    //{
-    //    throw new NotImplementedException();
-    //}
+    #region Manage Appointments
+    [SwaggerOperation(
+        summary: "Get appointments",
+        description: "Get appointments of a patient by id, Requires Admin Role\n\n" +
+            "Example: `/api/patients/1/appointments`"
+    )]
+    [ProducesResponseType(typeof(List<ViewAppointmentDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Admin")]
+    [HttpGet("{id}/appointments")]
+    public async Task<IActionResult> GetAppointments(string id)
+    {
+        Patient? patient = (userManager.GetUsersInRoleAsync("Patient").Result).OfType<Patient>().SingleOrDefault(e => e.Id == id);
+        if (patient == null)
+            return NotFound(new { message = "Patient not found" });
+        
+        List<Appointment> appointments = await unit.AppointmentRepository.GetByPatientId(patient.Id) as List<Appointment>;
+        List<ViewAppointmentDTO> appointmentsDTO = mapper.Map<List<ViewAppointmentDTO>>(appointments);
+        return Ok(appointmentsDTO);
+    }
 
-    //[Authorize(Roles = "Patient")]
-    //[HttpGet("appointments")]
-    //public IActionResult GetAppointments() { throw new NotImplementedException(); }
+    [SwaggerOperation(
+        summary: "Get appointments",
+        description: "Get appointments of a patient who log in, Requires Patient Role\n\n" +
+            "Example: `/api/patients/appointments`"
+    )]
+    [ProducesResponseType(typeof(List<ViewAppointmentDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Patient")]
+    [HttpGet("/api/appointments")]
+    public async Task<IActionResult> GetMyAppointments()
+    {
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+
+        Patient? patient = await userManager.FindByNameAsync(User.Identity.Name) as Patient;
+        if (patient == null)
+            return NotFound(new { message = "Patient not found" });
+
+        List<Appointment> appointments = await unit.AppointmentRepository.GetByPatientId(patient.Id) as List<Appointment>;
+        List<ViewAppointmentDTO> appointmentsDTO = mapper.Map<List<ViewAppointmentDTO>>(appointments);
+        return Ok(appointmentsDTO);
+    }
+    #endregion
 }

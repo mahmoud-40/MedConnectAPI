@@ -12,25 +12,29 @@ namespace Medical.Data.Repository
         {
             db = _db;
         }
-
-        public async Task<List<Appointment>> GetAppointmentsByDoctorId(int doctorId)
+        public async Task<List<Appointment>> GetByDoctorId(int doctorId)
         {
             return await db.Appointments.Where(e => e.DoctorId == doctorId).ToListAsync();
         }
 
-        public async Task<List<Appointment>> GetAppointmentsByPatientId(string patientId)
+        public async Task<List<Appointment>> GetByPatientId(string patientId)
         {
             return await db.Appointments.Where(e => e.PatientId == patientId).ToListAsync();
         }
 
-        public async Task<List<Appointment>> GetAppointmentsByProviderId(string providerId)
+        public async Task<List<Appointment>> GetByProviderId(string providerId)
         {
             return await db.Doctors.Where(e => e.ProviderId == providerId).SelectMany(e => e.Appointments).ToListAsync();
         }
 
-        public async Task<bool> IsAppointmentTaken(int doctorId, DateOnly date, int time)
+        public async Task<bool> IsTaken(int doctorId, DateOnly date, int time)
         {
             return await db.Appointments.AnyAsync(e => e.DoctorId == doctorId && e.Date == date && e.Time == time);
+        }
+
+        public async Task<bool> IsTaken(string patientId, DateOnly date, int time)
+        {
+            return await db.Appointments.AnyAsync(e => e.PatientId == patientId && e.Date == date && e.Time == time);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Medical.DTOs.AppointmentDTOs;
+using Medical.DTOs.Appointments;
 using Medical.Utils;
 
 namespace Medical.DTOs.Records;
@@ -9,5 +10,5 @@ public class ViewRecordDTO
     public TimeSpan LastUpdate { get; set; }
     public TimeSpan Since { get; set; }
 
-    public List<AppointmentDetailsDTO> Appointments { get; set; } = new List<AppointmentDetailsDTO>(); //need update
+    // public List<ViewAppointmentDTO> Appointments { get; set; } = new List<ViewAppointmentDTO>();
 }

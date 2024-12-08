@@ -52,6 +52,8 @@ public class NotificationController : ControllerBase
         var notifications = await unit.NotificationRepository.GetByUserId(user.Id, from: _from, to: _to);
         foreach (var notification in notifications)
             notification.IsSeen = true;
+        await unit.Save();
+
         List<ViewNotificationDTO> views = mapper.Map<List<ViewNotificationDTO>>(notifications);
         return Ok(views);
     }
@@ -79,6 +81,7 @@ public class NotificationController : ControllerBase
         var notifications = await unit.NotificationRepository.GetByUserId(user.Id, false);
         foreach (var notification in notifications)
             notification.IsSeen = true;
+        await unit.Save();
 
         List<ViewNotificationDTO> views = mapper.Map<List<ViewNotificationDTO>>(notifications);
         return Ok(views);

@@ -263,7 +263,7 @@ public class AccountController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize]
-    [HttpDelete("`/api/profile`")]
+    [HttpDelete("/api/profile")]
     public async Task<IActionResult> DeleteProfile()
     {
         if (User.Identity?.Name == null)

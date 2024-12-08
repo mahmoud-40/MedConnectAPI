@@ -5,5 +5,6 @@ public enum Status
     Confirmed,
     Waiting,
     Canceled,
-    Resceduled
+    Rescheduled,
+    Updated
 }

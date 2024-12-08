@@ -4,8 +4,9 @@ namespace Medical.Data.Interface;
 
 public interface IAppointmentRepository : IGenericRepository<Appointment>
 {
-    Task<List<Appointment>> GetAppointmentsByDoctorId(int doctorId);
-    Task<List<Appointment>> GetAppointmentsByPatientId(string patientId);
-    Task<List<Appointment>> GetAppointmentsByProviderId(string providerId);
-    Task<bool> IsAppointmentTaken(int doctorId, DateOnly date, int time);
+    Task<List<Appointment>> GetByDoctorId(int doctorId);
+    Task<List<Appointment>> GetByPatientId(string patientId);
+    Task<List<Appointment>> GetByProviderId(string providerId);
+    Task<bool> IsTaken(int doctorId, DateOnly date, int time);
+    Task<bool> IsTaken(string patientId, DateOnly date, int time);
 }

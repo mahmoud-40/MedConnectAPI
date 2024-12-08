@@ -431,5 +431,3 @@ public class ProvidersController : ControllerBase
     }
     #endregion
 }
-
-// Provider -> Edit Profile -> Manage Doctors -> Manage Records
