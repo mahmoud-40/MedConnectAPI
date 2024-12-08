@@ -124,4 +124,26 @@ public class AppointmentsController : ControllerBase
         return Ok(new { message = "Appointment canceled successfully" });
     }
 
+    [Authorize(Roles = "Provider")]
+    [HttpPut("{id}/confirm")]
+    public async Task<IActionResult> ConfirmAppointment(int id)
+    {
+        var appointment = await _unit.AppointmentRepository.GetById(id);
+        if (appointment == null)
+            return NotFound(new { message = "Appointment not found" });
+
+        if (appointment.Status != Status.Waiting)
+            return BadRequest(new { message = "This appointment is not in the waiting list" });
+
+        appointment.Status = Status.Confirmed;
+
+        await _unit.AppointmentRepository.Update(appointment);
+        await _unit.Save();
+
+        await _unit.NotificationRepository.Add(appointment.PatientId, "Your appointment has been confirmed");
+        await _unit.Save();
+
+        return Ok(new { message = "Appointment confirmed successfully" });
+    }
+
 }
