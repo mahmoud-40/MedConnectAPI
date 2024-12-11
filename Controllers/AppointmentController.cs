@@ -67,10 +67,12 @@ public class AppointmentsController : ControllerBase
 
         await _unit.AppointmentRepository.Add(appointment);
         await _unit.NotificationRepository.Add(patient.Id, "Appointment booked successfully waiting for confirmation");
-        await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, $"New appointment({appointment.Id}) has been booked by {patient.Name}" +
-                                                                                $"Date: {appointment.Date} Time: {appointment.Time}" +
-                                                                                $"Doctor: {appointment.Doctor.FullName}\n" +
-                                                                                "Please confirm it as soon as possible");
+        await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, 
+            $"New appointment ({appointment.Id}) has been booked by {patient.Name}\n" +
+            $"Date: {appointment.Date}\n" +
+            $"Time: {appointment.Time}\n" +
+            $"Doctor: {appointment.Doctor.FullName}\n" +
+            "Please confirm it as soon as possible");
         await _unit.Save();
 
         ViewAppointmentDTO view = mapper.Map<ViewAppointmentDTO>(appointment);
@@ -277,18 +279,21 @@ public class AppointmentsController : ControllerBase
         if (User.IsInRole("Patient"))
         {
             appointment.Status = Status.Rescheduled;
-            await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, $"Appointment({appointment.Id}) has been rescheduled by patient\n" +
-                                                                                $"Date: {appointment.Date} Time: {appointment.Time}\n" +
-                                                                                $"Doctor: {appointment.Doctor.FullName}\n" +
-                                                                                "Please confirm it as soon as possible");
+            await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, 
+                $"Appointment({appointment.Id}) has been rescheduled by patient\n" +
+                $"Date: {appointment.Date} Time: {appointment.Time}\n" +
+                $"Doctor: {appointment.Doctor.FullName}\n" +
+                "Please confirm it as soon as possible");
         }
         else if (User.IsInRole("Provider"))
         {
             appointment.Status = Status.Updated;
-            await _unit.NotificationRepository.Add(appointment.PatientId, $"Appointment({appointment.Id}) has been rescheduled\n" +
-                                                                            $"Date: {appointment.Date} Time: {appointment.Time}\n" +
-                                                                            $"Doctor: {appointment.Doctor!.FullName}\n" +
-                                                                            "Please Accept it as soon as possible");
+            await _unit.NotificationRepository.Add(appointment.PatientId, 
+                $"Appointment ({appointment.Id}) has been rescheduled\n" +
+                $"Date: {appointment.Date}\n" +
+                $"Time: {appointment.Time}\n" +
+                $"Doctor: {appointment.Doctor!.FullName}\n" +
+                "Please accept it as soon as possible");
         }
 
         await _unit.AppointmentRepository.Update(appointment);
@@ -419,18 +424,25 @@ public class AppointmentsController : ControllerBase
         await _unit.Save();
 
         if (User.IsInRole("Patient"))
-            await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, $"Appointment({appointment.Id}) has been confirmed by patient\n" +
-                                                                                $"Date: {appointment.Date} Time: {appointment.Time}\n" +
-                                                                                $"Doctor: {appointment.Doctor?.FullName}");
+            await _unit.NotificationRepository.Add(appointment.Doctor!.ProviderId, 
+            $"Appointment ({appointment.Id}) has been confirmed by patient\n" +
+            $"Date: {appointment.Date}\n" +
+            $"Time: {appointment.Time}\n" +
+            $"Doctor: {appointment.Doctor?.FullName}");
         else if (User.IsInRole("Provider"))
-            await _unit.NotificationRepository.Add(appointment.PatientId, $"Appointment({appointment.Id})  at ({appointment.Doctor?.Provider?.Name}) has been confirmed\n" +
-                                                                            $"Date: {appointment.Date} Time: {appointment.Time}\n" +
-                                                                            $"Doctor: {appointment.Doctor?.FullName}");
-                                                                      
-        //Sent Reminder to patient before 1 day of appointment
-        await _unit.NotificationRepository.Add(appointment.PatientId, $"Reminder: Your appointment({appointment.Id}) At ({appointment.Doctor?.Provider?.Name}) is tomorrow" +
-                                                $"Date: {appointment.Date} Time: {appointment.Time}" +
-                                                $"Doctor: {appointment.Doctor?.FullName}", appointment.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1).AddHours(10));
+            await _unit.NotificationRepository.Add(appointment.PatientId, 
+            $"Appointment ({appointment.Id}) at ({appointment.Doctor?.Provider?.Name}) has been confirmed\n" +
+            $"Date: {appointment.Date}\n" +
+            $"Time: {appointment.Time}\n" +
+            $"Doctor: {appointment.Doctor?.FullName}");
+
+        // Send Reminder to patient before 1 day of appointment
+        await _unit.NotificationRepository.Add(appointment.PatientId, 
+            $"Reminder: Your appointment ({appointment.Id}) at ({appointment.Doctor?.Provider?.Name}) is tomorrow\n" +
+            $"Date: {appointment.Date}\n" +
+            $"Time: {appointment.Time}\n" +
+            $"Doctor: {appointment.Doctor?.FullName}", 
+            appointment.Date.ToDateTime(TimeOnly.MinValue).AddDays(-1).AddHours(10));
         await _unit.Save();
 
         return Ok(new { message = "Appointment confirmed successfully" });

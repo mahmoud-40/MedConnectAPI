@@ -89,9 +89,7 @@ public class AccountController : ControllerBase
         string? confirmationLink = Url.Action("ConfirmEmail", "Account",
             new { userId = user.Id, token = token }, Request.Scheme);
 
-        // await emailService.SendEmailAsync(user.Email!, "Confirm Your Email",
-        //     $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
-        await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "Confirm Your Email",
+        await emailService.SendEmailAsync(user.Email!, "Confirm Your Email",
             $"Please confirm your email by clicking <a href='{confirmationLink}'>here</a>.");
 
         await unit.Save();
@@ -178,8 +176,7 @@ public class AccountController : ControllerBase
             var token = await usermanager.GeneratePasswordResetTokenAsync(user);
             var passwordResetLink = Url.Action("ResetPassword", "Account", new { Email = forgetPasswordDTO.Email, Token = token }, Request.Scheme);
 
-            // await emailService.SendEmailAsync(user.Email!, "ResetPassword", "Please reset your email." + passwordResetLink);
-            await emailService.SendEmailAsync("healthcaresystem878@gmail.com", "ResetPassword", "Please reset your email." + passwordResetLink);
+            await emailService.SendEmailAsync(user.Email!, "ResetPassword", "Please reset your email." + passwordResetLink);
         }
 
         return Ok (new { Message = "If an account with that email exists, a password reset link has been sent." });
@@ -238,13 +235,13 @@ public class AccountController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
-    public IActionResult DeleteAccount(string id)
+    public async Task<IActionResult> DeleteAccount(string id)
     {
-        AppUser? user = usermanager.FindByIdAsync(id).Result;
+        AppUser? user = await usermanager.FindByIdAsync(id);
         if (user == null)
             return NotFound(new { message = "User not found" });
 
-        IdentityResult res = usermanager.DeleteAsync(user).Result;
+        IdentityResult res = await usermanager.DeleteAsync(user);
 
         if (!res.Succeeded)
             return BadRequest(res.Errors);
@@ -269,11 +266,11 @@ public class AccountController : ControllerBase
         if (User.Identity?.Name == null)
             return Unauthorized();
 
-        AppUser? user = usermanager.FindByNameAsync(User.Identity.Name).Result;
+        AppUser? user = await usermanager.FindByNameAsync(User.Identity.Name);
         if (user == null)
             return NotFound();
         
-        IdentityResult res = usermanager.DeleteAsync(user).Result;
+        IdentityResult res = await usermanager.DeleteAsync(user);
         if (!res.Succeeded)
             return BadRequest(res.Errors);
         
