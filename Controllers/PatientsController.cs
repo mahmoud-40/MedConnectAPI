@@ -39,9 +39,9 @@ public class PatientsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [HttpGet]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {   
-        List<Patient> patients = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().ToList();
+        List<Patient> patients = (await userManager.GetUsersInRoleAsync("Patient")).OfType<Patient>().ToList();
 
         List<ViewPatientDTO> patientsDTO = mapper.Map<List<ViewPatientDTO>>(patients);
         
@@ -58,9 +58,9 @@ public class PatientsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [HttpGet("{id}")]
-    public IActionResult GetById(string id)
+    public async Task<IActionResult> GetById(string id)
     {
-        Patient? patient = userManager.GetUsersInRoleAsync("Patient").Result.OfType<Patient>().Where(e => e.Id == id).SingleOrDefault();
+        Patient? patient = (await userManager.GetUsersInRoleAsync("Patient")).OfType<Patient>().Where(e => e.Id == id).SingleOrDefault();
         if (patient == null)
             return NotFound();
 
@@ -121,12 +121,15 @@ public class PatientsController : ControllerBase
         if (patient == null)
             return NotFound();
 
-        if (!validator.IsBirthdayValid(patientDTO.BirthDay, out Exception ex))
-            return BadRequest(ex.Message);
+        if (patientDTO.BirthDay != null)
+            if (!validator.IsBirthdayValid(patientDTO.BirthDay.Value, out Exception ex))
+                return BadRequest(ex.Message);
+        else
+            patientDTO.BirthDay = patient.BirthDay;
 
         mapper.Map(patientDTO, patient);
 
-        IdentityResult res = userManager.UpdateAsync(patient).Result;
+        IdentityResult res = await userManager.UpdateAsync(patient);
         if (!res.Succeeded)
             return BadRequest(res.Errors);
 
@@ -159,7 +162,7 @@ public class PatientsController : ControllerBase
         if (User.Identity?.Name == null)
             return Unauthorized();
 
-        Patient? patient = userManager.FindByNameAsync(User.Identity.Name).Result as Patient;
+        Patient? patient = await userManager.FindByNameAsync(User.Identity.Name) as Patient;
         if (patient == null)
             return NotFound(new { message = "Patient not found" });
 
@@ -168,7 +171,9 @@ public class PatientsController : ControllerBase
 
     [SwaggerOperation(
         summary: "Get medical records",
-        description: "Get medical records of a patient, Requires Admin Role\n\n" +
+        description: "Get medical records of a patient, Requires Admin or Patient Role\n\n" +
+            "If Admin Role, you can get medical records of any patient\n\n" +
+            "If Patient Role, you can get medical records of yourself\n\n" +
             "Query parameters: doctorId or providerId\n\n" +
             "You can only use one of the query parameters\n\n" +
             "Example: `/api/patients/1/medical-records?doctorId=1`"
@@ -178,7 +183,7 @@ public class PatientsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Patient")]
     [HttpGet("{id}/medical-records")]
     public async Task<IActionResult> GetMedicalRecordsGerneral([FromRoute] string id, [FromQuery] int? doctorId, [FromQuery] string? providerId)
     {
@@ -188,6 +193,9 @@ public class PatientsController : ControllerBase
         Patient? patient = (await userManager.GetUsersInRoleAsync("Patient")).OfType<Patient>().SingleOrDefault(e => e.Id == id);
         if (patient == null)
             return NotFound(new { message = "Patient not found" });
+
+        if (User.IsInRole("Patient") && User.Identity?.Name != patient.UserName)
+            return Unauthorized(new { message = "Unauthorized" });
 
         Doctor? doctor = await unit.DoctorRepository.GetById(doctorId ?? -1);
         if (doctorId != null && doctor == null)
@@ -333,21 +341,26 @@ public class PatientsController : ControllerBase
     #region Manage Appointments
     [SwaggerOperation(
         summary: "Get appointments",
-        description: "Get appointments of a patient by id, Requires Admin Role\n\n" +
+        description: "Get appointments of a patient by id, Requires Admin or Patient Role\n\n" +
+            "If Admin Role, you can get appointments of any patient\n\n" +
+            "If Patient Role, you can get appointments of yourself\n\n" +
             "Example: `/api/patients/1/appointments`"
     )]
     [ProducesResponseType(typeof(List<ViewAppointmentDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin, Patient")]
     [HttpGet("{id}/appointments")]
     public async Task<IActionResult> GetAppointments(string id)
     {
-        Patient? patient = (userManager.GetUsersInRoleAsync("Patient").Result).OfType<Patient>().SingleOrDefault(e => e.Id == id);
+        Patient? patient = (await userManager.GetUsersInRoleAsync("Patient")).OfType<Patient>().SingleOrDefault(e => e.Id == id);
         if (patient == null)
             return NotFound(new { message = "Patient not found" });
         
+        if (User.IsInRole("Patient") && User.Identity?.Name != patient.UserName)
+            return Unauthorized(new { message = "Unauthorized" });
+
         List<Appointment> appointments = await unit.AppointmentRepository.GetByPatientId(patient.Id) as List<Appointment>;
         List<ViewAppointmentDTO> appointmentsDTO = mapper.Map<List<ViewAppointmentDTO>>(appointments);
         return Ok(appointmentsDTO);

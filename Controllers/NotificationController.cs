@@ -45,7 +45,7 @@ public class NotificationController : ControllerBase
        if (User.Identity?.Name == null)
            return Unauthorized();
 
-       AppUser? user = userManager.FindByNameAsync(User.Identity.Name).Result;
+       AppUser? user = await userManager.FindByNameAsync(User.Identity.Name);
        if (user == null)
            return NotFound(new { message = "User not found" });
 
@@ -74,7 +74,7 @@ public class NotificationController : ControllerBase
         if (User.Identity?.Name == null)
             return Unauthorized();
 
-        AppUser? user = userManager.FindByNameAsync(User.Identity.Name).Result;
+        AppUser? user = await userManager.FindByNameAsync(User.Identity.Name);
         if (user == null)
             return NotFound(new { message = "User not found" });
 
@@ -138,7 +138,7 @@ public class NotificationController : ControllerBase
         if (dto.ReleaseDate != null && dto.ReleaseDate < DateTime.UtcNow)
             return BadRequest("Release date must be in the future");
 
-        AppUser? user = userManager.FindByIdAsync(dto.UserId).Result;
+        AppUser? user = await userManager.FindByIdAsync(dto.UserId);
         if (user == null)
             return NotFound(new { message = "User not found" });
         

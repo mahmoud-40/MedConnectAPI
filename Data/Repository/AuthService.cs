@@ -1,7 +1,7 @@
-﻿using Medical.Data.Interface;
+﻿using Medical.Configuration;
+using Medical.Data.Interface;
 using Medical.DTOs.Account;
 using Medical.Models;
-using Medical.Utils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;

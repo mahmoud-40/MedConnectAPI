@@ -25,6 +25,8 @@ public class MapperConfig : Profile
             .ForMember(dest => dest.Age, opt => opt.MapFrom(src => converter.GetAge(src.BirthDay)))
             .ForMember(dest => dest.MemberSince, opt => opt.MapFrom(src => converter.CalcDuration(src.CreatedAt, null)));
         CreateMap<Patient, ProfilePatientDTO>()
+            .ForMember(dest => dest.Age, opt => opt.MapFrom(src => converter.GetAge(src.BirthDay)))
+            .ForMember(dest => dest.MemberSince, opt => opt.MapFrom(src => converter.CalcDuration(src.CreatedAt, null)))
             .ForMember(dest => dest.UpcomingAppointments, opt => opt.MapFrom(src => src.Appointments.Where(a => a.Date >= DateOnly.FromDateTime(DateTime.Today) && a.Date <= DateOnly.FromDateTime(DateTime.Today.AddDays(7)))))
             .ForMember(dest => dest.UnreadNotifications, opt => opt.MapFrom(src => src.Notifications.Where(n => !n.IsSeen)));
         CreateMap<UpdatePatientDTO, Patient>()
@@ -32,7 +34,8 @@ public class MapperConfig : Profile
 
         CreateMap<Provider, ViewProviderDTO>()
             .ForMember(dest => dest.MemberSince, opt => opt.MapFrom(src => converter.CalcDuration(src.CreatedAt, null)))
-            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors));
+            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors))
+            .AfterMap((src, dest, context) => dest.PhotoUri = new Uri($"{context.Items["BaseUrl"]}/{src.PhotoId}"));
         CreateMap<UpdateProviderDTO, Provider>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 

@@ -15,4 +15,5 @@ public class ViewProviderDTO
     public string? PhoneNumber { get; set; }
     public List<ViewDoctorDTO> Doctors { get; set; } = new List<ViewDoctorDTO>();
     public TimeSpan MemberSince { get; set; }
+    public Uri? PhotoUri { get; set; }
 }
