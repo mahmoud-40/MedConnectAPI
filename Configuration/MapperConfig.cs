@@ -34,7 +34,8 @@ public class MapperConfig : Profile
 
         CreateMap<Provider, ViewProviderDTO>()
             .ForMember(dest => dest.MemberSince, opt => opt.MapFrom(src => converter.CalcDuration(src.CreatedAt, null)))
-            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors));
+            .ForMember(dest => dest.Doctors, opt => opt.MapFrom(src => src.Doctors))
+            .AfterMap((src, dest, context) => dest.PhotoUri = new Uri($"{context.Items["BaseUrl"]}/{src.PhotoId}"));
         CreateMap<UpdateProviderDTO, Provider>()
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 

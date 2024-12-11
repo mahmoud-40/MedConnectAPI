@@ -6,6 +6,7 @@ using Medical.DTOs.Patients;
 using Medical.DTOs.Providers;
 using Medical.DTOs.Records;
 using Medical.Models;
+using Medical.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -20,12 +21,23 @@ public class ProvidersController : ControllerBase
     private readonly UserManager<AppUser> _userManager;
     private readonly IUnitOfWork _unit;
     private readonly IMapper mapper;
+    private readonly IFileService fileService;
 
-    public ProvidersController(UserManager<AppUser> userManager, IUnitOfWork unit, IMapper mapper)
+    private const string mediaEndPoint = $"api/media";
+    private string uploadPath;
+    private string basePath;
+    private const string mimeType = "image/jpeg";
+
+    public ProvidersController(UserManager<AppUser> userManager, IUnitOfWork unit, IMapper mapper, IFileService fileService, IConfiguration config)
     {
         _userManager = userManager;
         _unit = unit;
         this.mapper = mapper;
+        this.fileService = fileService;
+
+        string uploadFolder = config.GetSection("Upload-Path").Get<string>() ?? throw new Exception("Upload Path Doesn't Exists in appsettings.json");
+        basePath = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName ?? throw new Exception("Error in Find Base Directory");
+        uploadPath = Path.Combine(basePath, uploadFolder);
     }
 
     #region  Get Providers
@@ -40,7 +52,7 @@ public class ProvidersController : ControllerBase
     public async Task<IActionResult> GetProviders()
     {
         List<Provider> _providers = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().ToList();
-        List<ViewProviderDTO> _providersDto = mapper.Map<List<ViewProviderDTO>>(_providers);
+        List<ViewProviderDTO> _providersDto = mapper.Map<List<ViewProviderDTO>>(_providers, opt => opt.Items["BaseUrl"] = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/{mediaEndPoint}");
 
         return Ok(_providersDto);
     }
@@ -60,7 +72,7 @@ public class ProvidersController : ControllerBase
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider);
+        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider, opt => opt.Items["BaseUrl"] = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/{mediaEndPoint}");
 
         return Ok(_displayProviderDto);
     }
@@ -85,14 +97,76 @@ public class ProvidersController : ControllerBase
         if (_provider == null)
             return NotFound(new { message = "Provider not found" });
 
-        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider);
+        ViewProviderDTO _displayProviderDto = mapper.Map<ViewProviderDTO>(_provider, opt => opt.Items["BaseUrl"] = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/{mediaEndPoint}");
 
         return Ok(_displayProviderDto);
+    }
+
+    [SwaggerOperation(
+        Summary = "Get Provider Image",
+        Description = "Get Provider Image by id\n\n" +
+            "Example: `/api/providers/1/image`"
+    )]
+    [ProducesResponseType(typeof(PhysicalFileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [HttpGet("{id}/image")]
+    public async Task<IActionResult> GetProviderImage(string id)
+    {
+        Provider? provider = (await _userManager.GetUsersInRoleAsync("Provider")).OfType<Provider>().SingleOrDefault(e => e.Id == id);
+        if (provider == null)
+            return NotFound(new { message = "Provider not found" });
+        if (provider.PhotoId is null)
+            return NotFound(new { message = "Provider photo not found" });
+
+        string filePath = Path.Combine(uploadPath, provider.PhotoId);
+        if (!System.IO.File.Exists(filePath))
+            return NotFound(new { message = "File not found" });
+
+        return PhysicalFile(filePath, mimeType);
     }
 
     #endregion
 
     #region Update Provider
+    [SwaggerOperation(
+        Summary = "Update provider image",
+        Description = "Update provider image or Add If not exists, Requires Provider Role\n\n" +
+            "Example: `PUT /api/providers/profile/image`"
+    )]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
+    [Authorize(Roles = "Provider")]
+    [HttpPut("profile/image")]
+    public async Task<IActionResult> AddOrUpdatePhoto(IFormFile file)
+    {
+        if (file == null)
+            return BadRequest(new { message = "File is required" });
+        if (file.Length == 0)
+            return BadRequest(new { message = "File is empty" });
+        if (User.Identity?.Name == null)
+            return Unauthorized();
+
+        Provider? provider = await _userManager.FindByNameAsync(User.Identity.Name) as Provider;
+        if (provider == null)
+            return NotFound(new { message = "Provider not found" });
+
+        if (provider.PhotoId is not null)
+            fileService.RemovePhoto(provider.PhotoId, uploadPath);
+
+        string fileName = await fileService.AddPhoto(file, uploadPath);
+        provider.PhotoId = fileName;
+
+        await _unit.ProviderRepository.Update(provider);
+        await _unit.NotificationRepository.Add(provider.Id, "Profile image updated successfully");
+        await _unit.Save();
+
+        return Ok(new { message = "Profile image updated successfully" });
+    }
+
     [SwaggerOperation(
         Summary = "Update provider data",
         Description = "Update provider data, Requires Provider Role\n\n" +
@@ -104,7 +178,7 @@ public class ProvidersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(object), StatusCodes.Status500InternalServerError)]
     [Authorize(Roles = "Provider")]
-    [HttpPut]
+    [HttpPut("profile")]
     public async Task<IActionResult> Update(UpdateProviderDTO _providerDto)
     {
         if (_providerDto == null)
@@ -118,7 +192,19 @@ public class ProvidersController : ControllerBase
         if (provider == null)
             return NotFound(new { message = "Provider not found" });
 
+        string? oldPhotoId = provider.PhotoId;
+        string? newPhotoId = null;
+
+        if (_providerDto.Photo is not null)
+        {
+            if (oldPhotoId is not null)
+                fileService.RemovePhoto(oldPhotoId, uploadPath);
+
+            newPhotoId = await fileService.AddPhoto(_providerDto.Photo, uploadPath);
+        }
+
         mapper.Map(_providerDto, provider);
+        provider.PhotoId = newPhotoId ?? oldPhotoId;
 
         await _unit.ProviderRepository.Update(provider);
         await _unit.NotificationRepository.Add(provider.Id, "Profile updated successfully");

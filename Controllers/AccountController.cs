@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Diagnostics.Eventing.Reader;
+using AutoMapper;
 using Medical.Data.Interface;
 using Medical.Data.UnitOfWorks;
 using Medical.DTOs.Account;
@@ -23,8 +24,11 @@ public class AccountController : ControllerBase
     private readonly IUnitOfWork unit;
     private readonly IValidator validator;
     private readonly IMapper mapper;
+    private readonly IFileService fileService;
 
-    public AccountController(UserManager<AppUser> _usermanager, IAuthService authService, SignInManager<AppUser> signIn, IUnitOfWork unit, IEmailService emailService, IValidator validator, IMapper mapper)
+    private string uploadPath;
+
+    public AccountController(UserManager<AppUser> _usermanager, IAuthService authService, SignInManager<AppUser> signIn, IUnitOfWork unit, IEmailService emailService, IValidator validator, IMapper mapper, IFileService fileService, IConfiguration config)
     {
         this.usermanager = _usermanager;
         this.emailService = emailService;
@@ -33,6 +37,11 @@ public class AccountController : ControllerBase
         this.unit = unit;
         this.validator = validator;
         this.mapper = mapper;
+        this.fileService = fileService;
+
+        string uploadFolder = config.GetSection("Upload-Path").Get<string>() ?? throw new Exception("Upload Path Doesn't Exists in appsettings.json");
+        string basePath = Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.Parent?.FullName ?? throw new Exception("Error in Find Base Directory");
+        uploadPath = Path.Combine(basePath, uploadFolder);
     }
 
     [SwaggerOperation(Summary = "Register a new user and assigns them to a role", Description ="Registers a new user, sends an email confirmation link, and assigns the user to the appropriate role.\n\n" +
@@ -246,6 +255,13 @@ public class AccountController : ControllerBase
         if (!res.Succeeded)
             return BadRequest(res.Errors);
 
+        if (User.IsInRole("Provider"))
+        {
+            Provider provider = user as Provider ?? throw new Exception("Provider not found");
+            if (provider.PhotoId is not null)
+                fileService.RemovePhoto(provider.PhotoId, uploadPath);
+        }
+
         return Ok(new { message = "User deleted successfully" });
     }
 
@@ -273,6 +289,13 @@ public class AccountController : ControllerBase
         IdentityResult res = await usermanager.DeleteAsync(user);
         if (!res.Succeeded)
             return BadRequest(res.Errors);
+        
+        if (User.IsInRole("Provider"))
+        {
+            Provider provider = user as Provider ?? throw new Exception("Provider not found");
+            if (provider.PhotoId is not null)
+                fileService.RemovePhoto(provider.PhotoId, uploadPath);
+        }
         
         await signIn.SignOutAsync();
         return Ok(new { message = "User deleted successfully" });

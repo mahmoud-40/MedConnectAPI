@@ -19,6 +19,7 @@ WebApplicationBuilder? builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<MedicalContext>(op => op.UseLazyLoadingProxies().UseSqlServer(builder.Configuration.GetConnectionString("SQL-Server")));
 builder.Services.AddSingleton<IConverter, Converter>();
+builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IValidator, Validator>();
 builder.Services.AddScoped<IEmailService, EmailService>();
