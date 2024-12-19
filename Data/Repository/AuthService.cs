@@ -16,9 +16,9 @@ public class AuthService : IAuthService
     private readonly UserManager<AppUser> userManager;
     private readonly SignInManager<AppUser> _signInManager;
     private readonly IConfiguration config;
-    private readonly JWTHelper jwt;
+    private readonly JWTConfig jwt;
 
-    public AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> _signInManager, IConfiguration config, IOptions<JWTHelper> jwt)
+    public AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> _signInManager, IConfiguration config, IOptions<JWTConfig> jwt)
     {
         this.userManager = userManager;
         this._signInManager = _signInManager;

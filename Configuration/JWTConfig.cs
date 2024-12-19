@@ -1,6 +1,6 @@
-﻿namespace Medical.Utils;
+﻿namespace Medical.Configuration;
 
-public class JWTHelper
+public class JWTConfig
 {
     public required string Key { get; set; }
     public string? Issuer { get; set; }
