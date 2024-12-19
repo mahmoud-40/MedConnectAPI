@@ -98,7 +98,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 #endregion
 
 #region JWT
-builder.Services.Configure<JWTHelper>(builder.Configuration.GetSection("JWT"));
+builder.Services.Configure<JWTConfig>(builder.Configuration.GetSection("JWT"));
 
 builder.Services.AddAuthentication(ops =>
 {
